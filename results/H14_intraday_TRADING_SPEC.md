@@ -8,25 +8,32 @@ regime/confluence overlay. Calibration source: H14 Phases 1–2
 params: [`h14_intraday_spec_params.json`](h14_intraday_spec_params.json).
 Source-of-truth code: [`src/rsi_pattern/intraday.py`](../src/rsi_pattern/intraday.py).
 
-> ⚠️ **H17 walk-forward validation update (2026-05-12)**
+> ⚠️ **H17 + H18 walk-forward validation updates (2026-05-12)**
 >
-> H14's published full-window **Sortino +6.19 is optimistic by ~33%.**
-> The 104-day calibration window was used for both threshold selection
-> AND evaluation. A 50/50 walk-forward split (train Jan 21 → Mar 13,
-> test Mar 15 → May 4) shows the H14 thresholds (30, 72, 72) decay
-> from train Sortino **+7.74 → test Sortino +4.17** (ratio 0.54).
+> **H17 (strict-M thresholds):** H14's published full-window
+> Sortino +6.19 is optimistic by ~33%. A 50/50 walk-forward (train
+> Jan 21 → Mar 13, test Mar 15 → May 4) on the same H14 cycles
+> (40, 80, 160) shows the H14 thresholds (30, 72, 72) decay from
+> train Sortino **+7.74 → test Sortino +4.17** (ratio 0.54).
+> Threshold choice itself is NOT paper-fit — generalizes better
+> than a formally trained alternative. Thresholds stay; **expected
+> metric numbers are revised** (row 15b below). See
+> [`H17_walkforward_validation.md`](H17_walkforward_validation.md).
 >
-> The honest forward-looking expectation is **Sortino ≈ +4.17**, not
-> +6.19. Mean R/trade decays similarly: +2.61 (train) → +1.00 (test).
-> Max DD ~ −10–14% range, comparable across slices.
+> **H18 (remaining knobs):** Walk-forward'd FLD cycles, range
+> lookback, trail factor, time stop, and scheme. Trail factor (3.6)
+> and scheme (C) are confirmed. Range lookback and time stop have
+> test-better alternatives that LOSE on train — regime-shift
+> artifacts, not robust revisions.
 >
-> H14's threshold choice itself is **NOT paper-fit** — a formally
-> trained alternative (28, 72, 70) overfits worse (test Sortino +2.78).
-> The trade-count selection rule from H14 Phase 1.2 was incidentally
-> robust. Thresholds stay; **only the expected-metric numbers below
-> are revised**.
->
-> Full analysis: [`H17_walkforward_validation.md`](H17_walkforward_validation.md).
+> **One real revision candidate**: FLD cycles **(20, 40, 80)** wins
+> on BOTH train (+9.31) AND test (+8.79) vs H14's (40, 80, 160)
+> (train +7.74, test +4.17). The only candidate from H18 that
+> passes a both-slices filter. **NOT yet adopted** — cycle changes
+> cascade to lookback / time-stop / strict-M-thresholds and need a
+> coordinated re-validation on the next 52 days of 5m data before
+> the spec moves to v1.1. Until then, run H14 as published. See
+> [`H18_walkforward_remaining_knobs.md`](H18_walkforward_remaining_knobs.md).
 
 ## Primary spec — 5m DXY · Scheme C
 
