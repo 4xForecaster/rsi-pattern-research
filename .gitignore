@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Data (BarChart CSVs are paid data, never commit)
+data/dxy/*.csv
+data/*/*.csv
+
+# Notebooks (keep .ipynb but ignore checkpoints)
+.ipynb_checkpoints/
+
+# Environment
+.env
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
