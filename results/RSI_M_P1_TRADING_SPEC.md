@@ -1,9 +1,15 @@
 # RSI M-P1 LONG — Operational Trading Spec
 
-**Version 1.0 · 2026-05-12 · DXY daily**
-Locked-in choices from hardening Steps 1–2 (H11, H12). Source-of-truth is
-`src/rsi_pattern/{patterns,position_sizing,fld}.py`. Numeric params mirrored in
-`results/spec_params.json` for programmatic ingest.
+**Version 1.1 · 2026-05-12 · DXY daily**
+Locked-in choices from hardening Steps 1–3 (H11, H12, H13). v1.1 records the
+empirical resolution of the three spec discrepancies via the H13 ablation
+([`H13_ablation_for_spec.md`](H13_ablation_for_spec.md)) — all three knobs
+held at their current-code values because each won on Sortino. **No rule
+changes from v1.0; only the rationale is upgraded from "what the code does"
+to "what the code does, verified to be the empirical optimum."**
+
+Source-of-truth is `src/rsi_pattern/{patterns,position_sizing,fld}.py`.
+Numeric params mirrored in `results/spec_params.json` for programmatic ingest.
 
 | # | Block | Rule |
 |---|---|---|
@@ -27,12 +33,18 @@ Locked-in choices from hardening Steps 1–2 (H11, H12). Source-of-truth is
 - **FLD is the simplified canonical form** (median-price shift, no Sentient Trader confluence). Step 5 of the hardening plan swaps in the real hurst-agent FLD output. Until then, `fld.fld_bias` uses `(10, 20, 40)` fixed cycles.
 - **Initial stop has no volatility floor.** For thin rise-origin lookbacks the stop can sit very close to entry — risk per unit is small but slippage cost on a stop-out is proportionally larger. Acceptable per H12 results; monitor.
 
-## Discrepancies between this spec and the user's Step-3 draft
+## H13 ablation — discrepancies resolved empirically
 
-Resolved by treating the **code as ground truth** (H11/H12 backtests called `fib_long_at_p1` which calls `detect_m`, not `detect_strict_m`). Three items differ from the draft prompt:
+Under Scheme D rules with everything else held constant (skip bullish FLD, 1× neutral, 3× bearish; SURF Fib; trail at 3.600×; 200-bar time stop; 1990–2026 daily DXY). Full details in [`H13_ablation_for_spec.md`](H13_ablation_for_spec.md). Selection rule: highest Sortino, ≥20 trades required.
 
-1. **Detector is loose-M, not strict-M.** The draft cited strict-M thresholds (origin <30, peaks ≥75.01, wiggle ≥70). Those define `patterns_strict.detect_strict_m` and produce ~5 trades on DXY daily. The 124-trade backtest used the loose definition above (peaks ≥65, dip ≥50, completes <50). Switching to strict-M would invalidate the H11/H12 results.
-2. **Initial stop has no ATR term.** Draft said `min(structural_low, entry − 1×ATR14)`. Code uses the 60-bar lookback low only. ATR(14) is never computed in this strategy.
-3. **Range anchor is pre-P1, not post-P1.** Draft said "RSI-pattern high and subsequent low prior to entry." Code anchors the range low at the 60-bar window *before* P1 (the rise-origin floor), not anywhere between P1 and the entry bar.
+| Cell | Trades | Mean R | Sortino | Max DD | Verdict |
+|---|---|---|---|---|---|
+| **baseline (loose / struct / pre-P1)** | 56 | +4.15 | **+5.75** | -2.78% | **WINS** |
+| v1 strict-M | 2 | +2.03 | +0.74 | -0.95% | excluded (<20 trades) |
+| v2 wider stop (ATR floor) | 56 | +3.53 | +4.77 | -3.08% | loses on Sortino (−17%) |
+| v3 pre-entry range | 56 | +7.29 | +3.79 | -6.45% | loses on Sortino; flagged for possible Scheme F |
+| v_all | 2 | +7.59 | n/a | 0.00% | excluded (<20 trades) |
 
-If any of (1)–(3) reflect Dr. A's true intent, treat this spec as describing the *current* code and re-run H11/H12 against a corrected `fib_long_at_p1` before adopting changes.
+1. **Detector — loose-M wins.** Strict-M generates only 2 trades on daily DXY (its thresholds are calibrated for higher-frequency oscillations). Empirically not better; not even testable on this timeframe.
+2. **Initial stop — structural-only wins.** Adding an ATR floor cost +0.98 Sortino and +0.62 Mean R while leaving Max DD slightly worse. The structural stops aren't being whipsawed enough to need padding.
+3. **Range — pre-P1 wins on Sortino.** Pre-entry range produces higher Mean R (+7.29) and +9.41 Calmar but loses on Sortino (+3.79) and triples Max DD to −6.45%. Worth revisiting under a return-maxing variant (Scheme F) in a future step.
