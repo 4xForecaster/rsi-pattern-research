@@ -6,6 +6,8 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+build/
+dist/
 
 # Data (BarChart CSVs are paid data, never commit)
 data/dxy/*.csv

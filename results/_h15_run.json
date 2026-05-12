@@ -1,0 +1,167 @@
+{
+  "DXY": {
+    "rows": [
+      {
+        "label": "DXY full",
+        "trades": 56,
+        "trade_universe": 124,
+        "bias_counts": {
+          "bullish": 68,
+          "neutral": 40,
+          "bearish": 16,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.1468608494603165,
+        "total_R_per_year": 6.781793540806054,
+        "sharpe": 0.4664841294680146,
+        "sortino": 5.752691752959003,
+        "calmar": -0.2740922474537765,
+        "mar": 1.2853685253141864,
+        "max_dd": -0.027762480840506032,
+        "data_first": "1990-01-02",
+        "data_last": "2026-05-04",
+        "data_bars": 9304
+      },
+      {
+        "label": "DXY OOS(7y)",
+        "trades": 14,
+        "trade_universe": 25,
+        "bias_counts": {
+          "bullish": 11,
+          "neutral": 11,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 3.615605076814121,
+        "total_R_per_year": 8.059457960021364,
+        "sharpe": 0.564904223545474,
+        "sortino": 5.377543244308452,
+        "calmar": -0.27567729885518166,
+        "mar": 1.506808816418186,
+        "max_dd": -0.04472135683514267,
+        "data_first": "2019-05-06",
+        "data_last": "2026-05-04",
+        "data_bars": 1814
+      }
+    ],
+    "decision": "GO",
+    "decision_reason": "Sortino +5.75 \u2265 3.0 and trades 56 \u2265 30"
+  },
+  "USDCHF": {
+    "rows": [
+      {
+        "label": "USDCHF full",
+        "trades": 25,
+        "trade_universe": 56,
+        "bias_counts": {
+          "bullish": 31,
+          "neutral": 17,
+          "bearish": 8,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.2520637053554668,
+        "total_R_per_year": 1.5981138816783766,
+        "sharpe": 0.31046684062013447,
+        "sortino": 0.8690877414504348,
+        "calmar": 1.2400116160209924,
+        "mar": 0.16641424055095697,
+        "max_dd": -0.08413248581303456,
+        "data_first": "2003-09-17",
+        "data_last": "2026-05-04",
+        "data_bars": 5883
+      },
+      {
+        "label": "USDCHF OOS(7y)",
+        "trades": 6,
+        "trade_universe": 17,
+        "bias_counts": {
+          "bullish": 11,
+          "neutral": 6,
+          "bearish": 0,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.3682124509554126,
+        "total_R_per_year": 1.9844060795954908,
+        "sharpe": 0.5362368908602376,
+        "sortino": 2.431907660583993,
+        "calmar": 1.247032331888444,
+        "mar": 1.925455938538632,
+        "max_dd": -0.010000000000000009,
+        "data_first": "2019-05-06",
+        "data_last": "2026-05-04",
+        "data_bars": 1820
+      },
+      {
+        "label": "USDCHF excl-2015",
+        "trades": 23,
+        "trade_universe": 53,
+        "bias_counts": {
+          "bullish": 30,
+          "neutral": 17,
+          "bearish": 6,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.156019640693893,
+        "total_R_per_year": 1.3574828063403999,
+        "sharpe": 0.2721126413030602,
+        "sortino": 0.7379005283614269,
+        "calmar": 1.2412319359760324,
+        "mar": 0.1300287011632854,
+        "max_dd": -0.09313418986665534,
+        "data_first": "2003-09-17",
+        "data_last": "2026-05-04",
+        "data_bars": 5622
+      }
+    ],
+    "decision": "NO-GO",
+    "decision_reason": "Sortino +0.87 < 1.0 OR trades 25 < 10 \u2014 needs symbol-specific calibration"
+  },
+  "USDMXN": {
+    "rows": [
+      {
+        "label": "USDMXN full",
+        "trades": 26,
+        "trade_universe": 59,
+        "bias_counts": {
+          "bullish": 33,
+          "neutral": 14,
+          "bearish": 12,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.112078875632818,
+        "total_R_per_year": 6.8462638615776426,
+        "sharpe": 0.4056326187330567,
+        "sortino": 4.411565522715369,
+        "calmar": 0.5806751171133936,
+        "mar": 1.6492427773890306,
+        "max_dd": -0.026989986314613468,
+        "data_first": "2003-12-01",
+        "data_last": "2026-05-04",
+        "data_bars": 5838
+      },
+      {
+        "label": "USDMXN OOS(7y)",
+        "trades": 7,
+        "trade_universe": 14,
+        "bias_counts": {
+          "bullish": 7,
+          "neutral": 2,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "mean_R_weighted": 3.6135296415270224,
+        "total_R_per_year": 5.685471945214902,
+        "sharpe": 0.5071371338372372,
+        "sortino": 2.5291700001855935,
+        "calmar": 0.5725126735805319,
+        "mar": 0.9937785479809068,
+        "max_dd": -0.052317067695298314,
+        "data_first": "2019-05-06",
+        "data_last": "2026-05-04",
+        "data_bars": 1820
+      }
+    ],
+    "decision": "SWEEP",
+    "decision_reason": "Sortino +4.41 in (1.0, 3.0) \u2014 run parameter sweep before deciding"
+  }
+}
