@@ -1,0 +1,282 @@
+{
+  "is_window": [
+    "2003-12-01 00:00:00+00:00",
+    "2019-08-08 00:00:00+00:00",
+    4086
+  ],
+  "oos_window": [
+    "2019-08-09 00:00:00+00:00",
+    "2026-05-04 00:00:00+00:00",
+    1752
+  ],
+  "results": [
+    {
+      "variant": {
+        "name": "baseline (H15)",
+        "dip": 50.0,
+        "cycles": [
+          10,
+          20,
+          40
+        ]
+      },
+      "is": {
+        "label": "baseline (H15) IS",
+        "trades": 19,
+        "universe": 45,
+        "bias_counts": {
+          "bullish": 26,
+          "neutral": 12,
+          "bearish": 7,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.6641759618823215,
+        "total_R_per_year": 8.025309336764566,
+        "sharpe": 0.43538398012666746,
+        "sortino": 5.301396866383092,
+        "calmar": 5.329613441754954,
+        "mar": 2.322331519220647,
+        "max_dd": -0.024108609464965514
+      },
+      "oos": {
+        "label": "baseline (H15) OOS",
+        "trades": 7,
+        "universe": 13,
+        "bias_counts": {
+          "bullish": 6,
+          "neutral": 2,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "mean_R_weighted": 3.6135296415270233,
+        "total_R_per_year": 5.6854719452149025,
+        "sharpe": 0.5071371338372372,
+        "sortino": 2.5291700001855917,
+        "calmar": 0.5725126735805319,
+        "mar": 0.9937785479809068,
+        "max_dd": -0.052317067695298314
+      },
+      "full": {
+        "label": "baseline (H15) FULL",
+        "trades": 26,
+        "universe": 59,
+        "bias_counts": {
+          "bullish": 33,
+          "neutral": 14,
+          "bearish": 12,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.112078875632819,
+        "total_R_per_year": 6.846263861577643,
+        "sharpe": 0.4056326187330567,
+        "sortino": 4.411565522715367,
+        "calmar": 0.5806751171133936,
+        "mar": 1.6492427773890306,
+        "max_dd": -0.026989986314613468
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino=+2.53<3.0; trades insufficient (OOS=7, FULL=26)"
+    },
+    {
+      "variant": {
+        "name": "variant_A (dip=45)",
+        "dip": 45.0,
+        "cycles": [
+          10,
+          20,
+          40
+        ]
+      },
+      "is": {
+        "label": "variant_A (dip=45) IS",
+        "trades": 20,
+        "universe": 47,
+        "bias_counts": {
+          "bullish": 27,
+          "neutral": 13,
+          "bearish": 7,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.330967163788205,
+        "total_R_per_year": 7.95073808319168,
+        "sharpe": 0.43032397452102505,
+        "sortino": 5.089863936468272,
+        "calmar": 5.331051925069235,
+        "mar": 2.2880280920434677,
+        "max_dd": -0.024303920709247806
+      },
+      "oos": {
+        "label": "variant_A (dip=45) OOS",
+        "trades": 9,
+        "universe": 16,
+        "bias_counts": {
+          "bullish": 7,
+          "neutral": 3,
+          "bearish": 6,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.3660786100765736,
+        "total_R_per_year": 4.78639502213798,
+        "sharpe": 0.42915557438077045,
+        "sortino": 1.731722829613897,
+        "calmar": 0.4453684319800706,
+        "mar": 0.5086017735771345,
+        "max_dd": -0.08719511282549719
+      },
+      "full": {
+        "label": "variant_A (dip=45) FULL",
+        "trades": 29,
+        "universe": 64,
+        "bias_counts": {
+          "bullish": 35,
+          "neutral": 16,
+          "bearish": 13,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.410829336774251,
+        "total_R_per_year": 6.5887190865106575,
+        "sharpe": 0.3935607315190133,
+        "sortino": 3.938895874240543,
+        "calmar": 0.4513461460510061,
+        "mar": 0.9592704185384731,
+        "max_dd": -0.04518657469646603
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino=+1.73<3.0; trades insufficient (OOS=9, FULL=29)"
+    },
+    {
+      "variant": {
+        "name": "variant_B (cycles=15/30/60)",
+        "dip": 50.0,
+        "cycles": [
+          15,
+          30,
+          60
+        ]
+      },
+      "is": {
+        "label": "variant_B (cycles=15/30/60) IS",
+        "trades": 16,
+        "universe": 45,
+        "bias_counts": {
+          "bullish": 29,
+          "neutral": 11,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.256249026727284,
+        "total_R_per_year": 6.271441264229123,
+        "sharpe": 0.34849186622742806,
+        "sortino": 4.0526677346848095,
+        "calmar": 7.807894828006722,
+        "mar": 1.3768469340054497,
+        "max_dd": -0.03381859825628053
+      },
+      "oos": {
+        "label": "variant_B (cycles=15/30/60) OOS",
+        "trades": 7,
+        "universe": 13,
+        "bias_counts": {
+          "bullish": 6,
+          "neutral": 4,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.5348600417305837,
+        "total_R_per_year": 0.8415405610428738,
+        "sharpe": 0.20215138003377273,
+        "sortino": 0.36559750658497986,
+        "calmar": -0.09204144423547414,
+        "mar": 0.14571910804192317,
+        "max_dd": -0.05693086778298506
+      },
+      "full": {
+        "label": "variant_B (cycles=15/30/60) FULL",
+        "trades": 24,
+        "universe": 59,
+        "bias_counts": {
+          "bullish": 35,
+          "neutral": 16,
+          "bearish": 8,
+          "unknown": 0
+        },
+        "mean_R_weighted": 3.7751090622678114,
+        "total_R_per_year": 4.6668461486165045,
+        "sharpe": 0.30311793853488755,
+        "sortino": 3.034117833872219,
+        "calmar": -0.09182310313383281,
+        "mar": 0.9989303931042276,
+        "max_dd": -0.03381859825628053
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino=+0.37<3.0; trades insufficient (OOS=7, FULL=24)"
+    },
+    {
+      "variant": {
+        "name": "variant_C (both)",
+        "dip": 45.0,
+        "cycles": [
+          15,
+          30,
+          60
+        ]
+      },
+      "is": {
+        "label": "variant_C (both) IS",
+        "trades": 17,
+        "universe": 47,
+        "bias_counts": {
+          "bullish": 30,
+          "neutral": 11,
+          "bearish": 6,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.770587319272738,
+        "total_R_per_year": 6.047727503510463,
+        "sharpe": 0.33281748365518343,
+        "sortino": 3.1420465277654603,
+        "calmar": 7.812325572593744,
+        "mar": 1.3025661672566893,
+        "max_dd": -0.03476336643572364
+      },
+      "oos": {
+        "label": "variant_C (both) OOS",
+        "trades": 10,
+        "universe": 16,
+        "bias_counts": {
+          "bullish": 6,
+          "neutral": 6,
+          "bearish": 4,
+          "unknown": 0
+        },
+        "mean_R_weighted": -0.09669595987847568,
+        "total_R_per_year": -0.21641053520596346,
+        "sharpe": -0.028244863085899942,
+        "sortino": -0.04440974744816505,
+        "calmar": -0.16179262678822975,
+        "mar": -0.022893803471783627,
+        "max_dd": -0.09488477963830844
+      },
+      "full": {
+        "label": "variant_C (both) FULL",
+        "trades": 28,
+        "universe": 64,
+        "bias_counts": {
+          "bullish": 36,
+          "neutral": 18,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.9604156286974512,
+        "total_R_per_year": 4.2654509206380435,
+        "sharpe": 0.2794090277482333,
+        "sortino": 2.2691869583419675,
+        "calmar": -0.1609824952418695,
+        "mar": 0.5971601345792144,
+        "max_dd": -0.05284027631381427
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino=-0.04<3.0; trades insufficient (OOS=10, FULL=28)"
+    }
+  ]
+}
