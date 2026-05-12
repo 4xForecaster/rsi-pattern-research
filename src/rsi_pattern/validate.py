@@ -90,6 +90,62 @@ def fractal_compare(
     return out
 
 
+def event_conditional_returns(
+    df: pd.DataFrame,
+    states: pd.Series,
+    horizons_bars: tuple[int, ...] = (1, 5, 20, 60),
+    close_col: str = "close",
+) -> pd.DataFrame:
+    """H3 — Forward returns conditional on TRANSITION events (not occupancy).
+
+    For each pair (prev_state -> curr_state) where state changes, compute
+    forward returns over K bars and compare to unconditional baseline.
+
+    This is the test that produces the large directional effects on DXY.
+    C->M and C->V transitions (first peak / first trough) show Cohen's d ~1.0
+    across all timeframes at the 1-bar horizon. See results/H3_event_conditional.md.
+    """
+    log_close = np.log(df[close_col])
+    prev = states.shift(1)
+    curr = states
+
+    # Only enumerate transitions that actually occur (skip M<->V which never do)
+    event_masks = {}
+    for src in ["C", "M", "V"]:
+        for dst in ["C", "M", "V"]:
+            if src == dst:
+                continue
+            mask = (prev == src) & (curr == dst)
+            if mask.sum() > 0:
+                event_masks[f"{src}->{dst}"] = mask
+
+    rows = []
+    for K in horizons_bars:
+        fwd = log_close.shift(-K) - log_close
+        baseline = fwd.dropna()
+        baseline_mean = float(baseline.mean())
+        for event_name, mask in event_masks.items():
+            cond = fwd[mask].dropna()
+            if len(cond) < 10:
+                continue
+            ks = stats.ks_2samp(cond, baseline)
+            t_stat, t_p = stats.ttest_ind(cond, baseline, equal_var=False)
+            pooled = np.sqrt((cond.var() + baseline.var()) / 2)
+            d = (cond.mean() - baseline_mean) / pooled if pooled > 0 else 0
+            rows.append({
+                "event": event_name,
+                "horizon_bars": K,
+                "n": len(cond),
+                "mean_return": float(cond.mean()),
+                "baseline_mean": baseline_mean,
+                "diff": float(cond.mean() - baseline_mean),
+                "cohens_d": float(d),
+                "t_pvalue": float(t_p),
+                "ks_pvalue": float(ks.pvalue),
+            })
+    return pd.DataFrame(rows)
+
+
 def conditional_forward_returns(
     df: pd.DataFrame,
     states: pd.Series,
