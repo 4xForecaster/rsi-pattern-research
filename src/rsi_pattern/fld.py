@@ -21,17 +21,24 @@ import math
 import numpy as np
 import pandas as pd
 
-DEFAULT_CYCLES = (40, 80, 120)  # daily-friendly cycle periods
+# Canonical Hurst daily periods from hurst-agent (Signal / Mid / Sequence)
+DEFAULT_CYCLES = (10, 20, 40)
 
 
 def median_price(df: pd.DataFrame, high_col: str = "high", low_col: str = "low") -> pd.Series:
     return (df[high_col] + df[low_col]) / 2
 
 
-def compute_fld(df: pd.DataFrame, cycle_bars: int, smooth: int = 3) -> pd.Series:
-    """FLD = SMA(median_price, smooth) shifted forward by ceil(cycle_bars/2)."""
-    mp = median_price(df).rolling(smooth, min_periods=1).mean()
-    shift = math.ceil(cycle_bars / 2)
+def compute_fld(df: pd.DataFrame, cycle_bars: int, smooth: int = 1) -> pd.Series:
+    """FLD per Hurst canonical: source = (high+low)/2, shift = period // 2 + 1.
+
+    Matches the implementation in `~/Documents/4xForecaster/hurst-agent/src/hurst_agent/cycles.py`.
+    No smoothing by default (Hurst canonical uses raw median).
+    """
+    mp = median_price(df)
+    if smooth > 1:
+        mp = mp.rolling(smooth, min_periods=1).mean()
+    shift = cycle_bars // 2 + 1   # canonical Hurst shift
     return mp.shift(shift).rename(f"fld_{cycle_bars}")
 
 
