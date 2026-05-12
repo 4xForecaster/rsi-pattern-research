@@ -1,0 +1,145 @@
+{
+  "timeframe": "daily",
+  "data_window": [
+    "1990-01-02 00:00:00+00:00",
+    "2026-05-04 00:00:00+00:00",
+    9304
+  ],
+  "h10_prior_cohens_d": -1.53,
+  "detector": "loose_V",
+  "entry_rule": "breach+1 after V completes",
+  "fld_cycles": [
+    10,
+    20,
+    40
+  ],
+  "spread": 0.0002,
+  "base_risk": 0.01,
+  "phase_1_full_window": {
+    "A. Pure parallel (1/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 20,
+        "bearish": 39,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.47664828288924593,
+      "total_R_per_year": 0.8727647390382519,
+      "sharpe": 0.2322528724709318,
+      "sortino": 0.6999018993017412,
+      "calmar": -0.3355959347572974,
+      "mar": 0.13034863899880278,
+      "max_dd": -0.05877357831837382
+    },
+    "B. Modest (3/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 20,
+        "bearish": 39,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.5525670870309914,
+      "total_R_per_year": 1.011775530985787,
+      "sharpe": 0.24216181931111858,
+      "sortino": 0.7194667572103256,
+      "calmar": -0.33552432536731647,
+      "mar": 0.12205817927108824,
+      "max_dd": -0.07143755977887922
+    },
+    "C. Aggressive (5/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 20,
+        "bearish": 39,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.6284858911727371,
+      "total_R_per_year": 1.1507863229333217,
+      "sharpe": 0.2319979570050714,
+      "sortino": 0.6939596468051992,
+      "calmar": -0.3354575861001913,
+      "mar": 0.11832305868986852,
+      "max_dd": -0.08233533958740591
+    },
+    "D. Skip bearish + 3x bullish": {
+      "trades": 24,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 20,
+        "bearish": 39,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.8560937518477667,
+      "total_R_per_year": 0.5971606452373298,
+      "sharpe": 0.16829515837849032,
+      "sortino": 0.536935303092576,
+      "calmar": -0.19023408874620346,
+      "mar": 0.0783411450319944,
+      "max_dd": -0.06951405173496827
+    },
+    "E. Conservative (3/1/0.5)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 20,
+        "bearish": 39,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.43934902005792764,
+      "total_R_per_year": 0.8044680881115581,
+      "sharpe": 0.21284875306823856,
+      "sortino": 0.6595583996876961,
+      "calmar": -0.29611233349702015,
+      "mar": 0.11519082109322164,
+      "max_dd": -0.06187203428064547
+    }
+  },
+  "phase_1_verdict": "SIGNAL",
+  "phase_2_walkforward": {
+    "winner_name": "B. Modest (3/1/1)",
+    "train": {
+      "trades": 44,
+      "universe": 44,
+      "bias_counts": {
+        "bullish": 3,
+        "neutral": 10,
+        "bearish": 31,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.9072022420894428,
+      "total_R_per_year": 1.6796828609008565,
+      "sharpe": 0.3353182356602054,
+      "sortino": 1.1636823680536104,
+      "calmar": -0.33462981326618235,
+      "mar": 0.19925019389736365,
+      "max_dd": -0.07143755977887922
+    },
+    "test": {
+      "trades": 18,
+      "universe": 18,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 10,
+        "bearish": 8,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.08086487232160956,
+      "total_R_per_year": -0.14506032826150667,
+      "sharpe": -0.06374149729166932,
+      "sortino": -0.09650587852244348,
+      "calmar": -0.33623896110581974,
+      "mar": -0.03402960427436978,
+      "max_dd": -0.04290960828136747
+    },
+    "verdict": "PAPER_FIT",
+    "verdict_reason": "test/train ratio -0.08 < 0.33"
+  }
+}
