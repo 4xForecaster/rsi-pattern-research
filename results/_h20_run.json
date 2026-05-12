@@ -1,0 +1,919 @@
+{
+  "timeframe": "1h",
+  "data_window": [
+    "2023-02-03 10:00:00+00:00",
+    "2026-05-04 23:00:00+00:00",
+    19999
+  ],
+  "fld_cycles": [
+    24,
+    48,
+    96
+  ],
+  "time_stop_bars": 96,
+  "spread": 0.0002,
+  "train_window": [
+    "2023-02-03 10:00:00+00:00",
+    "2025-05-13 17:00:00+00:00",
+    13999
+  ],
+  "test_window": [
+    "2025-05-13 18:00:00+00:00",
+    "2026-05-04 23:00:00+00:00",
+    6000
+  ],
+  "min_train_trades": 30,
+  "min_test_trades": 15,
+  "phase_2_full_window_5_scheme": {
+    "A. Pure parallel (1/1/1)": {
+      "trades": 72,
+      "universe": 72,
+      "bias_counts": {
+        "bullish": 19,
+        "neutral": 40,
+        "bearish": 13,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.5977590811492712,
+      "total_R_per_year": 13.470324178289236,
+      "sharpe": 1.1346853502465017,
+      "sortino": 1.7311350945125943,
+      "calmar": 1.5124139813842095,
+      "mar": 1.268200448191852,
+      "max_dd": -0.07215289116800183
+    },
+    "B. Modest (1/1/3)": {
+      "trades": 72,
+      "universe": 72,
+      "bias_counts": {
+        "bullish": 19,
+        "neutral": 40,
+        "bearish": 13,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.1005507470203135,
+      "total_R_per_year": 24.800585728483473,
+      "sharpe": 1.2879319747815787,
+      "sortino": 2.1464331068705476,
+      "calmar": 0.8497462446073085,
+      "mar": 1.3679221711568972,
+      "max_dd": -0.11308060793279706
+    },
+    "C. Aggressive (1/1/5)": {
+      "trades": 72,
+      "universe": 72,
+      "bias_counts": {
+        "bullish": 19,
+        "neutral": 40,
+        "bearish": 13,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.6033424128913565,
+      "total_R_per_year": 36.13084727867772,
+      "sharpe": 1.2833907718479804,
+      "sortino": 2.2335067410347023,
+      "calmar": 0.518766539974154,
+      "mar": 1.4219971291248357,
+      "max_dd": -0.14833351251013593
+    },
+    "D. Skip bullish + 3x (0/1/3)": {
+      "trades": 53,
+      "universe": 72,
+      "bias_counts": {
+        "bullish": 19,
+        "neutral": 40,
+        "bearish": 13,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.4215870156106898,
+      "total_R_per_year": 23.581351195326167,
+      "sharpe": 1.2669311421379024,
+      "sortino": 2.1398808858325573,
+      "calmar": 1.0106953322960004,
+      "mar": 1.3057939214044236,
+      "max_dd": -0.1135329799091861
+    },
+    "E. Conservative (0.5/1/3)": {
+      "trades": 72,
+      "universe": 72,
+      "bias_counts": {
+        "bullish": 19,
+        "neutral": 40,
+        "bearish": 13,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.0734983723113136,
+      "total_R_per_year": 24.190968461904813,
+      "sharpe": 1.2826020452448086,
+      "sortino": 2.1540929949224723,
+      "calmar": 0.9297396906961762,
+      "mar": 1.3532192883075995,
+      "max_dd": -0.11193911786458466
+    }
+  },
+  "phase_2_winner": "C. Aggressive (1/1/5)",
+  "phase_3_train_cells": [
+    {
+      "trades": 31,
+      "universe": 31,
+      "bias_counts": {
+        "bullish": 8,
+        "neutral": 16,
+        "bearish": 7,
+        "unknown": 0
+      },
+      "mean_R_weighted": 3.2731411713591156,
+      "total_R_per_year": 48.38245326110499,
+      "sharpe": 1.8814307287440295,
+      "sortino": 4.3941055953341985,
+      "calmar": 9.701584349003964,
+      "mar": 2.768833018222166,
+      "max_dd": -0.11044366137913775,
+      "origin": 25.0,
+      "peak": 72.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 30,
+      "universe": 30,
+      "bias_counts": {
+        "bullish": 7,
+        "neutral": 16,
+        "bearish": 7,
+        "unknown": 0
+      },
+      "mean_R_weighted": 3.350735186569859,
+      "total_R_per_year": 47.93169818125226,
+      "sharpe": 1.863519555575893,
+      "sortino": 4.3701323077720575,
+      "calmar": 9.722760606102481,
+      "mar": 2.7431921970161626,
+      "max_dd": -0.11044366137913775,
+      "origin": 25.0,
+      "peak": 72.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 34,
+      "universe": 34,
+      "bias_counts": {
+        "bullish": 8,
+        "neutral": 19,
+        "bearish": 7,
+        "unknown": 0
+      },
+      "mean_R_weighted": 3.0089110362420364,
+      "total_R_per_year": 48.78088995244351,
+      "sharpe": 1.8820736809971528,
+      "sortino": 4.266197537569381,
+      "calmar": 8.337216896750665,
+      "mar": 2.7829107970998797,
+      "max_dd": -0.11044366137913775,
+      "origin": 25.0,
+      "peak": 72.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 13,
+      "universe": 13,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 8,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.885351347835761,
+      "total_R_per_year": 11.686840127103332,
+      "sharpe": 1.163313557795275,
+      "sortino": 2.9185852549999347,
+      "calmar": 4.3252018517750335,
+      "mar": 2.022032450265274,
+      "max_dd": -0.04352617306391193,
+      "origin": 25.0,
+      "peak": 75.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 13,
+      "universe": 13,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 8,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.885351347835761,
+      "total_R_per_year": 11.686840127103332,
+      "sharpe": 1.163313557795275,
+      "sortino": 2.9185852549999347,
+      "calmar": 4.3252018517750335,
+      "mar": 2.022032450265274,
+      "max_dd": -0.04352617306391193,
+      "origin": 25.0,
+      "peak": 75.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 14,
+      "universe": 14,
+      "bias_counts": {
+        "bullish": 4,
+        "neutral": 9,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.748374592110119,
+      "total_R_per_year": 11.671427515346075,
+      "sharpe": 1.1557697172493382,
+      "sortino": 2.878885953932408,
+      "calmar": 4.237607925219856,
+      "mar": 1.9821576256455304,
+      "max_dd": -0.04425251309907119,
+      "origin": 25.0,
+      "peak": 75.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 53,
+      "universe": 53,
+      "bias_counts": {
+        "bullish": 13,
+        "neutral": 30,
+        "bearish": 10,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.9696318263767767,
+      "total_R_per_year": 47.014334528925076,
+      "sharpe": 1.5138248872558098,
+      "sortino": 2.7500921265186062,
+      "calmar": 10.029400152888494,
+      "mar": 1.9476885937949446,
+      "max_dd": -0.1486885613922826,
+      "origin": 30.0,
+      "peak": 72.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 47,
+      "universe": 47,
+      "bias_counts": {
+        "bullish": 11,
+        "neutral": 26,
+        "bearish": 10,
+        "unknown": 0
+      },
+      "mean_R_weighted": 2.1622486898683015,
+      "total_R_per_year": 45.76915252379367,
+      "sharpe": 1.480549584908117,
+      "sortino": 2.7084235683860136,
+      "calmar": 9.932311754331064,
+      "mar": 1.8399206929283265,
+      "max_dd": -0.15325823759149193,
+      "origin": 30.0,
+      "peak": 72.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 60,
+      "universe": 60,
+      "bias_counts": {
+        "bullish": 16,
+        "neutral": 34,
+        "bearish": 10,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.7642021348571049,
+      "total_R_per_year": 47.67261379210044,
+      "sharpe": 1.509980541766044,
+      "sortino": 2.6959191873310684,
+      "calmar": 8.51173321453803,
+      "mar": 1.969821533295968,
+      "max_dd": -0.14833351251013593,
+      "origin": 30.0,
+      "peak": 72.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 45,
+      "universe": 45,
+      "bias_counts": {
+        "bullish": 11,
+        "neutral": 25,
+        "bearish": 9,
+        "unknown": 0
+      },
+      "mean_R_weighted": 2.0493481995428913,
+      "total_R_per_year": 43.51886220250239,
+      "sharpe": 1.3333798505862668,
+      "sortino": 2.3488100065967923,
+      "calmar": 11.152615129199122,
+      "mar": 1.5679761543522943,
+      "max_dd": -0.16461701587711952,
+      "origin": 28.0,
+      "peak": 72.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 51,
+      "universe": 51,
+      "bias_counts": {
+        "bullish": 13,
+        "neutral": 29,
+        "bearish": 9,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.8565158877036716,
+      "total_R_per_year": 44.680508820635744,
+      "sharpe": 1.3468699594672011,
+      "sortino": 2.334458207033229,
+      "calmar": 9.6170375688429,
+      "mar": 1.6105195070783307,
+      "max_dd": -0.16403900832785057,
+      "origin": 28.0,
+      "peak": 72.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 41,
+      "universe": 41,
+      "bias_counts": {
+        "bullish": 10,
+        "neutral": 22,
+        "bearish": 9,
+        "unknown": 0
+      },
+      "mean_R_weighted": 2.2039578464630827,
+      "total_R_per_year": 42.64188596931044,
+      "sharpe": 1.315360135997379,
+      "sortino": 2.3305670629222144,
+      "calmar": 11.02600933965341,
+      "mar": 1.5084571604856234,
+      "max_dd": -0.16769220883783942,
+      "origin": 28.0,
+      "peak": 72.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 6,
+      "universe": 6,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 5,
+        "bearish": 0,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.5822048835880063,
+      "total_R_per_year": 1.8902251887157269,
+      "sharpe": 0.60203852587623,
+      "sortino": 0.9253610890881844,
+      "calmar": 0.9497015196247114,
+      "mar": 0.6648739060276255,
+      "max_dd": -0.01943725311186273,
+      "origin": 25.0,
+      "peak": 78.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 6,
+      "universe": 6,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 5,
+        "bearish": 0,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.5822048835880063,
+      "total_R_per_year": 1.8902251887157269,
+      "sharpe": 0.60203852587623,
+      "sortino": 0.9253610890881844,
+      "calmar": 0.9497015196247114,
+      "mar": 0.6648739060276255,
+      "max_dd": -0.01943725311186273,
+      "origin": 25.0,
+      "peak": 78.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 19,
+      "universe": 19,
+      "bias_counts": {
+        "bullish": 7,
+        "neutral": 10,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.1925784906293615,
+      "total_R_per_year": 10.692760439722369,
+      "sharpe": 0.6083675303696148,
+      "sortino": 0.8892784350329334,
+      "calmar": 5.870952105169581,
+      "mar": 0.45194457249264797,
+      "max_dd": -0.1405688065319134,
+      "origin": 28.0,
+      "peak": 75.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 20,
+      "universe": 20,
+      "bias_counts": {
+        "bullish": 7,
+        "neutral": 11,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.1313334044817318,
+      "total_R_per_year": 10.677507131445806,
+      "sharpe": 0.6047858361025378,
+      "sortino": 0.8840205662399807,
+      "calmar": 5.739795244235607,
+      "mar": 0.4475005925265112,
+      "max_dd": -0.14128413662247286,
+      "origin": 28.0,
+      "peak": 75.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 18,
+      "universe": 18,
+      "bias_counts": {
+        "bullish": 7,
+        "neutral": 9,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 1.237657500280077,
+      "total_R_per_year": 10.512893069239494,
+      "sharpe": 0.6035513605665281,
+      "sortino": 0.8828377133846063,
+      "calmar": 5.388245347857873,
+      "mar": 0.43493460800077777,
+      "max_dd": -0.14334608528414539,
+      "origin": 28.0,
+      "peak": 75.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 7,
+      "universe": 7,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 6,
+        "bearish": 0,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.49479367300336935,
+      "total_R_per_year": 1.8741684791872066,
+      "sharpe": 0.5693612950194854,
+      "sortino": 0.866400556010191,
+      "calmar": 0.7130280622441373,
+      "mar": 0.5066279485978878,
+      "max_dd": -0.024898965760977054,
+      "origin": 25.0,
+      "peak": 78.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 24,
+      "universe": 24,
+      "bias_counts": {
+        "bullish": 8,
+        "neutral": 14,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.9131644047471165,
+      "total_R_per_year": 9.870282579547748,
+      "sharpe": 0.557398873043693,
+      "sortino": 0.8127537060207985,
+      "calmar": 5.506237758909513,
+      "mar": 0.4201927925705966,
+      "max_dd": -0.13879718926220797,
+      "origin": 30.0,
+      "peak": 75.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 25,
+      "universe": 25,
+      "bias_counts": {
+        "bullish": 8,
+        "neutral": 15,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.8753448992643026,
+      "total_R_per_year": 9.855725168196257,
+      "sharpe": 0.5539580797656165,
+      "sortino": 0.8077244097928141,
+      "calmar": 5.382030487390548,
+      "mar": 0.41583975333271944,
+      "max_dd": -0.13951310536482986,
+      "origin": 30.0,
+      "peak": 75.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 22,
+      "universe": 22,
+      "bias_counts": {
+        "bullish": 7,
+        "neutral": 13,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.968035792643202,
+      "total_R_per_year": 9.591432320326076,
+      "sharpe": 0.544871558044357,
+      "sortino": 0.7954998660294389,
+      "calmar": 5.049233526982345,
+      "mar": 0.39258685591012715,
+      "max_dd": -0.14346351713299077,
+      "origin": 30.0,
+      "peak": 75.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 11,
+      "universe": 11,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 8,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.11648608369932768,
+      "total_R_per_year": -0.5828293434408144,
+      "sharpe": -0.28537868446721515,
+      "sortino": -0.3431429897271395,
+      "calmar": 0.17834175120448495,
+      "mar": -0.23960269888867589,
+      "max_dd": -0.09934438275112312,
+      "origin": 30.0,
+      "peak": 78.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 12,
+      "universe": 12,
+      "bias_counts": {
+        "bullish": 2,
+        "neutral": 8,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.10569489921760829,
+      "total_R_per_year": -0.5769125071865222,
+      "sharpe": -0.28628283729520493,
+      "sortino": -0.34435727145167083,
+      "calmar": 0.17834424362335585,
+      "mar": -0.24006240367784756,
+      "max_dd": -0.0995484242438689,
+      "origin": 30.0,
+      "peak": 78.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 13,
+      "universe": 13,
+      "bias_counts": {
+        "bullish": 2,
+        "neutral": 9,
+        "bearish": 2,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.09984710623967324,
+      "total_R_per_year": -0.5904097412235723,
+      "sharpe": -0.28936221259699924,
+      "sortino": -0.3483197870190983,
+      "calmar": 0.1681696452870267,
+      "mar": -0.24162093199212845,
+      "max_dd": -0.10024606647928469,
+      "origin": 30.0,
+      "peak": 78.0,
+      "wiggle": 72.0
+    },
+    {
+      "trades": 7,
+      "universe": 7,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 5,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.215252956924566,
+      "total_R_per_year": -0.8153303668398283,
+      "sharpe": -0.3598875007184262,
+      "sortino": -0.3969040559151874,
+      "calmar": 0.9501630983291222,
+      "mar": -0.22270210833273887,
+      "max_dd": -0.09440779172557301,
+      "origin": 28.0,
+      "peak": 78.0,
+      "wiggle": 68.0
+    },
+    {
+      "trades": 7,
+      "universe": 7,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 5,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.215252956924566,
+      "total_R_per_year": -0.8153303668398283,
+      "sharpe": -0.3598875007184262,
+      "sortino": -0.3969040559151874,
+      "calmar": 0.9501630983291222,
+      "mar": -0.22270210833273887,
+      "max_dd": -0.09440779172557301,
+      "origin": 28.0,
+      "peak": 78.0,
+      "wiggle": 70.0
+    },
+    {
+      "trades": 8,
+      "universe": 8,
+      "bias_counts": {
+        "bullish": 1,
+        "neutral": 6,
+        "bearish": 1,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.19205553612205184,
+      "total_R_per_year": -0.8313870763683491,
+      "sharpe": -0.3632529248801565,
+      "sortino": -0.4014336877138307,
+      "calmar": 0.7136575014345716,
+      "mar": -0.22445005168207283,
+      "max_dd": -0.09510944340171745,
+      "origin": 28.0,
+      "peak": 78.0,
+      "wiggle": 72.0
+    }
+  ],
+  "phase_3_winner_thresholds": [
+    25.0,
+    72.0,
+    70.0
+  ],
+  "phase_3_train_winner_metrics": {
+    "trades": 31,
+    "universe": 31,
+    "bias_counts": {
+      "bullish": 8,
+      "neutral": 16,
+      "bearish": 7,
+      "unknown": 0
+    },
+    "mean_R_weighted": 3.2731411713591156,
+    "total_R_per_year": 48.38245326110499,
+    "sharpe": 1.8814307287440295,
+    "sortino": 4.3941055953341985,
+    "calmar": 9.701584349003964,
+    "mar": 2.768833018222166,
+    "max_dd": -0.11044366137913775,
+    "origin": 25.0,
+    "peak": 72.0,
+    "wiggle": 70.0
+  },
+  "phase_3_test_winner_metrics": {
+    "trades": 4,
+    "universe": 4,
+    "bias_counts": {
+      "bullish": 1,
+      "neutral": 2,
+      "bearish": 1,
+      "unknown": 0
+    },
+    "mean_R_weighted": 1.5075754716981036,
+    "total_R_per_year": 6.574829146719192,
+    "sharpe": 0.5072424353168671,
+    "sortino": 0.7370365382337483,
+    "calmar": 0.591957377983714,
+    "mar": 0.591957377983714,
+    "max_dd": -0.08639317005781622
+  },
+  "phase_3_train_h14": {
+    "trades": 60,
+    "universe": 60,
+    "bias_counts": {
+      "bullish": 16,
+      "neutral": 34,
+      "bearish": 10,
+      "unknown": 0
+    },
+    "mean_R_weighted": 1.7642021348571049,
+    "total_R_per_year": 47.67261379210044,
+    "sharpe": 1.509980541766044,
+    "sortino": 2.6959191873310684,
+    "calmar": 8.51173321453803,
+    "mar": 1.969821533295968,
+    "max_dd": -0.14833351251013593
+  },
+  "phase_3_test_h14": {
+    "trades": 12,
+    "universe": 12,
+    "bias_counts": {
+      "bullish": 3,
+      "neutral": 6,
+      "bearish": 3,
+      "unknown": 0
+    },
+    "mean_R_weighted": 0.7990438030626148,
+    "total_R_per_year": 10.454355190517733,
+    "sharpe": 0.5262069140882865,
+    "sortino": 0.7597201742562266,
+    "calmar": 0.5953141704468966,
+    "mar": 0.5953141704468966,
+    "max_dd": -0.12266732672354586
+  },
+  "phase_3_verdict_winner": "INCONCLUSIVE",
+  "phase_3_verdict_h14": "INCONCLUSIVE",
+  "phase_4_scheme_x_slice": {
+    "A. Pure parallel (1/1/1)": {
+      "train": {
+        "trades": 60,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 34,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.5719326508627876,
+        "total_R_per_year": 15.454875516224403,
+        "sharpe": 1.171722172827044,
+        "sortino": 1.7810385374356756,
+        "calmar": 2.1911506604511883,
+        "mar": 1.4528775515447336,
+        "max_dd": -0.07215289116800183
+      },
+      "test": {
+        "trades": 12,
+        "universe": 12,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 6,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.7268912325816901,
+        "total_R_per_year": 9.51034111165835,
+        "sharpe": 1.1009667799935599,
+        "sortino": 1.7202101661083413,
+        "calmar": 1.6811359131814263,
+        "mar": 1.6811359131814263,
+        "max_dd": -0.04556267521741697
+      }
+    },
+    "B. Modest (1/1/3)": {
+      "train": {
+        "trades": 60,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 34,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.168067392859946,
+        "total_R_per_year": 31.56374465416241,
+        "sharpe": 1.4712396723456442,
+        "sortino": 2.4987184101446136,
+        "calmar": 5.77562673397975,
+        "mar": 1.796564557611047,
+        "max_dd": -0.11308060793279706
+      },
+      "test": {
+        "trades": 12,
+        "universe": 12,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 6,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.7629675178221523,
+        "total_R_per_year": 9.98234815108804,
+        "sharpe": 0.7209903935677326,
+        "sortino": 1.0617166674540812,
+        "calmar": 0.9566694769211379,
+        "mar": 0.9566694769211379,
+        "max_dd": -0.07819972097539218
+      }
+    },
+    "C. Aggressive (1/1/5)": {
+      "train": {
+        "trades": 60,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 34,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.7642021348571049,
+        "total_R_per_year": 47.67261379210044,
+        "sharpe": 1.509980541766044,
+        "sortino": 2.6959191873310684,
+        "calmar": 8.51173321453803,
+        "mar": 1.969821533295968,
+        "max_dd": -0.14833351251013593
+      },
+      "test": {
+        "trades": 12,
+        "universe": 12,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 6,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.7990438030626148,
+        "total_R_per_year": 10.454355190517733,
+        "sharpe": 0.5262069140882865,
+        "sortino": 0.7597201742562266,
+        "calmar": 0.5953141704468966,
+        "mar": 0.5953141704468966,
+        "max_dd": -0.12266732672354586
+      }
+    },
+    "D. Skip bullish + 3x (0/1/3)": {
+      "train": {
+        "trades": 44,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 34,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.49117679024506,
+        "total_R_per_year": 29.843962884219625,
+        "sharpe": 1.420596910288288,
+        "sortino": 2.4551065534335472,
+        "calmar": 6.446953665597651,
+        "mar": 1.6783657438784114,
+        "max_dd": -0.1135329799091861
+      },
+      "test": {
+        "trades": 9,
+        "universe": 12,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 6,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.0813703396204353,
+        "total_R_per_year": 10.611148205723211,
+        "sharpe": 0.8226938147257752,
+        "sortino": 1.1989724235786126,
+        "calmar": 1.0633338105075607,
+        "mar": 1.0633338105075607,
+        "max_dd": -0.0774332509245631
+      }
+    },
+    "E. Conservative (0.5/1/3)": {
+      "train": {
+        "trades": 60,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 34,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.1307985195198282,
+        "total_R_per_year": 30.55665789799881,
+        "sharpe": 1.452126114533929,
+        "sortino": 2.4904370770507707,
+        "calmar": 6.579837342559506,
+        "mar": 1.7587628198545708,
+        "max_dd": -0.11193911786458466
+      },
+      "test": {
+        "trades": 12,
+        "universe": 12,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 6,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 0.7869976362687394,
+        "total_R_per_year": 10.296748178405627,
+        "sharpe": 0.7731716421426473,
+        "sortino": 1.1336881247482875,
+        "calmar": 1.0097613450168637,
+        "mar": 1.0097613450168637,
+        "max_dd": -0.07781459857247774
+      }
+    }
+  },
+  "production_decision": "NOT_VIABLE",
+  "production_decision_reason": "OOS Sortino +0.76 or trades 12 or DD -12.27% fails threshold"
+}

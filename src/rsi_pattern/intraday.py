@@ -21,21 +21,28 @@ from .risk_metrics import MTMTrade
 
 
 # --- Hurst FLD cycles per intraday timeframe (canonical 2× harmonic ladder) ---
+# Naming convention: short / mid / long cycle in bars. Each ≈ 2× the previous.
+# 1h ladder picked so the longest cycle (96 bars = 4 trading days) is in the
+# same wall-clock range where strict-M completions actually develop on hourly
+# DXY (~30-60 bars from P1 to RSI<50 typically).
 INTRADAY_FLD_CYCLES = {
     "5m":  (40, 80, 160),
     "15m": (32, 64, 128),
+    "1h":  (24, 48, 96),     # ≈ 1d / 2d / 4d wall-clock
 }
 
 # --- Time-stop in bars per timeframe (≈ 1× longest FLD cycle) ---
 INTRADAY_TIME_STOP_BARS = {
     "5m":  160,
     "15m": 128,
+    "1h":  96,
 }
 
 # --- Spread (fractional) per timeframe — H14 conservative defaults ---
 INTRADAY_SPREAD = {
     "5m":  0.0003,   # 3 bps
     "15m": 0.00025,  # 2.5 bps
+    "1h":  0.0002,   # 2 bps — same as daily; spread cost amortizes over the longer hold
 }
 
 # --- Calibrated strict-M thresholds from H14 Phase 1.2 grid sweep ---
