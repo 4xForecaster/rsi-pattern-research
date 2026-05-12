@@ -123,11 +123,15 @@ def build_equity_curve_mtm(
                   + Σ realized PnL from trades closed by bar t
                   + Σ unrealized PnL from trades open at bar t (priced at close[t])
 
-    Units for each trade are fixed at entry: mult * risk * cap / (entry - stop).
-    Spread is fractional (e.g. 0.0003 = 3 bps) and is charged on both legs:
-        entry_eff = entry * (1 + spread)   (long pays a touch above)
-        exit_eff  = exit * (1 - spread)    (long sells a touch below)
-        realized  = units * (exit_eff - entry_eff)
+    Units for each trade are fixed at entry: mult * risk * cap /
+    |entry - stop|. Spread is fractional (e.g. 0.0003 = 3 bps) and is
+    charged on both legs in the direction that costs the trader:
+        long  entry_eff = entry * (1 + spread)   (pays above close)
+              exit_eff  = exit  * (1 - spread)   (sells below close)
+              realized  = units * (exit_eff - entry_eff)
+        short entry_eff = entry * (1 - spread)   (sells below close)
+              exit_eff  = exit  * (1 + spread)   (covers above close)
+              realized  = units * (entry_eff - exit_eff)
     """
     if not trades:
         return pd.Series([initial_capital], index=bar_close.index[:1], name="equity")
@@ -139,15 +143,20 @@ def build_equity_curve_mtm(
     close_arr = bar_close.values
 
     for tr in trades:
-        if tr.direction != "long":
-            raise NotImplementedError("MTM short trades not yet supported")
-        risk_per_unit = tr.entry_price - tr.initial_stop
+        is_long = (tr.direction == "long")
+        risk_per_unit = (tr.entry_price - tr.initial_stop) if is_long \
+                        else (tr.initial_stop - tr.entry_price)
         if risk_per_unit <= 0:
             continue
         units = tr.multiplier * risk_per_trade * initial_capital / risk_per_unit
-        entry_eff = tr.entry_price * (1.0 + tr.spread)
-        exit_eff = tr.exit_price * (1.0 - tr.spread)
-        realized = units * (exit_eff - entry_eff)
+        if is_long:
+            entry_eff = tr.entry_price * (1.0 + tr.spread)
+            exit_eff  = tr.exit_price  * (1.0 - tr.spread)
+            realized  = units * (exit_eff - entry_eff)
+        else:
+            entry_eff = tr.entry_price * (1.0 - tr.spread)
+            exit_eff  = tr.exit_price  * (1.0 + tr.spread)
+            realized  = units * (entry_eff - exit_eff)
 
         entry_pos = idx_map.get(tr.entry_date)
         exit_pos = idx_map.get(tr.exit_date)
@@ -156,7 +165,11 @@ def build_equity_curve_mtm(
 
         # Unrealized MTM at every bar in [entry_pos, exit_pos)
         if exit_pos > entry_pos:
-            open_mtm[entry_pos:exit_pos] += units * (close_arr[entry_pos:exit_pos] - entry_eff)
+            slice_close = close_arr[entry_pos:exit_pos]
+            if is_long:
+                open_mtm[entry_pos:exit_pos] += units * (slice_close - entry_eff)
+            else:
+                open_mtm[entry_pos:exit_pos] += units * (entry_eff - slice_close)
 
         # Realized contribution from exit_pos onward
         contrib[exit_pos:] += realized

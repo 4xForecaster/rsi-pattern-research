@@ -293,6 +293,88 @@ def fib_long_at_p1(df: pd.DataFrame, rsi_col: str = "rsi14",
     return trades
 
 
+def define_fib_range_short_pre_t1(df: pd.DataFrame, t1_idx: int,
+                                  high_col: str = "high",
+                                  low_col: str = "low",
+                                  lookback: int = 60) -> tuple[float, int, int]:
+    """Symmetric mirror of ``define_fib_range_long`` for SHORT-at-T1+1 entries.
+
+    Range = high(pre-T1 lookback window) − low(T1_bar). The 'high' is the
+    most recent price ceiling BEFORE T1 (the prior M's top or local price
+    ceiling), where T1 is the first trough of a strict-V.
+    """
+    n = len(df)
+    if t1_idx <= 0:
+        return 0.0, t1_idx, 0
+    lb = min(t1_idx, lookback)
+    seg = df.iloc[t1_idx - lb:t1_idx]
+    high_pos = int(seg[high_col].values.argmax() + (t1_idx - lb))
+    price_high = float(df[high_col].iloc[high_pos])
+    price_low = float(df[low_col].iloc[t1_idx])
+    range_size = price_high - price_low
+    return range_size, high_pos, t1_idx
+
+
+def fib_short_at_v_t1(df: pd.DataFrame, rsi_col: str = "rsi14",
+                      v_cfg: Optional["StrictVConfig"] = None,  # type: ignore[name-defined]
+                      trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,
+                      max_bars: int = 200,
+                      lookback_bars: int = 60) -> list[FibTrade]:
+    """Symmetric SHORT mirror of ``fib_long_at_p1``.
+
+    Entry at T1+1 of a strict-V pattern (first trough of V plus one bar).
+    Range anchored from the pre-T1 60-bar lookback high down to T1's low.
+    Initial stop = the lookback-window high price (above entry for shorts).
+    Targets = T1 − 1.618×range, T1 − 2.236×range, T1 − 3.618×range.
+
+    Uses ``patterns_strict_v.detect_strict_v`` which itself inverts the RSI
+    series and reuses the strict-M detector. See ``patterns_strict_v.py``
+    for the threshold-inversion math.
+    """
+    from .patterns_strict_v import detect_strict_v, StrictVConfig
+    v_cfg = v_cfg or StrictVConfig()
+    rsi = df[rsi_col].dropna()
+    trades: list[FibTrade] = []
+    for v in detect_strict_v(rsi, v_cfg):
+        if v.completion_idx is None:
+            continue
+        # Map rsi-positional indices to df-positional via the rsi Series index.
+        t1_rsi_pos = int(v.first_major_trough_idx)
+        try:
+            t1_ts = rsi.index[t1_rsi_pos]
+            entry_ts = rsi.index[t1_rsi_pos + 1]
+            t1_df = df.index.get_loc(t1_ts)
+            entry_df = df.index.get_loc(entry_ts)
+        except (IndexError, KeyError):
+            continue
+        if entry_df >= len(df):
+            continue
+        entry_price = float(df["close"].iloc[entry_df])
+        range_size, hi_idx, lo_idx = define_fib_range_short_pre_t1(
+            df, t1_df, lookback=lookback_bars,
+        )
+        if range_size <= 0:
+            continue
+        initial_stop = float(df["high"].iloc[hi_idx])
+        if initial_stop <= entry_price:
+            continue
+        targets = compute_fib_targets(entry_price, range_size, "short")
+        t = FibTrade(
+            direction="short",
+            entry_idx=entry_df,
+            entry_price=entry_price,
+            range_size=range_size,
+            range_high_idx=hi_idx,
+            range_low_idx=lo_idx,
+            initial_stop=initial_stop,
+            targets=targets,
+        )
+        t = simulate_fib_trade(df, t, max_bars=max_bars,
+                               trail_activation_factor=trail_activation_factor)
+        trades.append(t)
+    return trades
+
+
 def fib_short_at_v_floor(df: pd.DataFrame, rsi_col: str = "rsi14",
                           cfg: PatternConfig | None = None,
                           trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,

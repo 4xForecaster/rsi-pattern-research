@@ -1,0 +1,123 @@
+{
+  "timeframe": "5m",
+  "data_window": [
+    "2026-01-28 19:25:00+00:00",
+    "2026-05-12 17:05:00+00:00",
+    19999
+  ],
+  "v_thresholds": {
+    "fall_origin_above": 70.0,
+    "major_trough_max": 28.0,
+    "wiggle_peak_ceiling": 28.0
+  },
+  "fld_cycles": [
+    40,
+    80,
+    160
+  ],
+  "schemes_short": {
+    "A. Pure parallel (1/1/1)": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "B. Modest (3/1/1)": [
+      3.0,
+      1.0,
+      1.0
+    ],
+    "C. Aggressive (5/1/1)": [
+      5.0,
+      1.0,
+      1.0
+    ],
+    "D. Skip bearish + 3x bullish": [
+      3.0,
+      1.0,
+      0.0
+    ],
+    "E. Conservative (3/1/0.5)": [
+      3.0,
+      1.0,
+      0.5
+    ]
+  },
+  "results": {
+    "A. Pure parallel (1/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 12,
+        "bearish": 51,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.0178609926866022,
+      "total_R_per_year": 4.069255816467646,
+      "sharpe": -1.956097837843061,
+      "sortino": -2.791572796856087,
+      "max_dd": -0.1697233889979921
+    },
+    "B. Modest (3/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 12,
+        "bearish": 51,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.0178609926866022,
+      "total_R_per_year": 4.069255816467646,
+      "sharpe": -1.956097837843061,
+      "sortino": -2.791572796856087,
+      "max_dd": -0.1697233889979921
+    },
+    "C. Aggressive (5/1/1)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 12,
+        "bearish": 51,
+        "unknown": 0
+      },
+      "mean_R_weighted": 0.0178609926866022,
+      "total_R_per_year": 4.069255816467646,
+      "sharpe": -1.956097837843061,
+      "sortino": -2.791572796856087,
+      "max_dd": -0.1697233889979921
+    },
+    "D. Skip bearish + 3x bullish": {
+      "trades": 12,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 12,
+        "bearish": 51,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.10558675495901625,
+      "total_R_per_year": -5.199851089723238,
+      "sharpe": -2.1172583792532325,
+      "sortino": -3.0495858391576327,
+      "max_dd": -0.06383328696115842
+    },
+    "E. Conservative (3/1/0.5)": {
+      "trades": 63,
+      "universe": 63,
+      "bias_counts": {
+        "bullish": 0,
+        "neutral": 12,
+        "bearish": 51,
+        "unknown": 0
+      },
+      "mean_R_weighted": -0.001125385081367125,
+      "total_R_per_year": -0.2563955916937402,
+      "sharpe": -2.3121318029622664,
+      "sortino": -3.323454332884379,
+      "max_dd": -0.11516460626710323
+    }
+  },
+  "has_signal": false
+}
