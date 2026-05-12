@@ -8,6 +8,26 @@ regime/confluence overlay. Calibration source: H14 Phases 1–2
 params: [`h14_intraday_spec_params.json`](h14_intraday_spec_params.json).
 Source-of-truth code: [`src/rsi_pattern/intraday.py`](../src/rsi_pattern/intraday.py).
 
+> ⚠️ **H17 walk-forward validation update (2026-05-12)**
+>
+> H14's published full-window **Sortino +6.19 is optimistic by ~33%.**
+> The 104-day calibration window was used for both threshold selection
+> AND evaluation. A 50/50 walk-forward split (train Jan 21 → Mar 13,
+> test Mar 15 → May 4) shows the H14 thresholds (30, 72, 72) decay
+> from train Sortino **+7.74 → test Sortino +4.17** (ratio 0.54).
+>
+> The honest forward-looking expectation is **Sortino ≈ +4.17**, not
+> +6.19. Mean R/trade decays similarly: +2.61 (train) → +1.00 (test).
+> Max DD ~ −10–14% range, comparable across slices.
+>
+> H14's threshold choice itself is **NOT paper-fit** — a formally
+> trained alternative (28, 72, 70) overfits worse (test Sortino +2.78).
+> The trade-count selection rule from H14 Phase 1.2 was incidentally
+> robust. Thresholds stay; **only the expected-metric numbers below
+> are revised**.
+>
+> Full analysis: [`H17_walkforward_validation.md`](H17_walkforward_validation.md).
+
 ## Primary spec — 5m DXY · Scheme C
 
 | # | Block | Rule (5m) |
@@ -26,7 +46,8 @@ Source-of-truth code: [`src/rsi_pattern/intraday.py`](../src/rsi_pattern/intrada
 | 12 | **Spread** | **3 bps** charged on entry (long pays a touch above close) and exit (long sells a touch below close). |
 | 13 | **Parallel positions** | Allowed. **Overlap-aware MTM is mandatory** — multiple positions are routine at 5m. No concurrency cap. Implementation: `risk_metrics.build_equity_curve_mtm`. Historical peak concurrent exposure under Scheme C ≈ 14× (driven by 5× bearish bursts). |
 | 14 | **Daily regime overlay** *(provisional — not yet enforced in code)* | Recommended: only take a 5m entry when daily FLD bias ≠ "bullish (all 3)" — i.e., the daily Scheme D filter agrees that we're not in a fully bullish daily regime. Pending Step 4 implementation. |
-| 15 | **Expected stats (5m, 2026-01-21 → 2026-05-04, 104 days)** | 69 trades · Mean R (weighted) **+1.77** · Total R/yr **+442** (annualized off 3.5 months — extrapolation) · Sharpe **+4.03** · Sortino **+6.19** · Calmar **+59.6** · MAR **+47.5** · Max DD **−13.51%**. |
+| 15 | **Expected stats (5m, full window, 2026-01-21 → 2026-05-04, 104 days)** | 69 trades · Mean R (weighted) +1.77 · Total R/yr +442 · Sharpe +4.03 · Sortino +6.19 · Max DD −13.51%. **⚠ Optimistic — see H17 walk-forward below.** |
+| 15b | **H17 walk-forward expected stats (load-bearing for forward use)** | 36 test trades · Mean R **+1.00** · Sharpe **+2.95** · **Sortino +4.17** · Max DD **−10.70%**. This is the honest forward-looking expectation derived from the held-out 52-day test slice (2026-03-15 → 2026-05-04) using the same H14 thresholds (30, 72, 72). |
 
 ## Secondary spec — 15m DXY (caveated)
 
