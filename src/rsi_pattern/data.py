@@ -38,8 +38,8 @@ def load_dxy(timeframe: str, root: pathlib.Path | None = None) -> pd.DataFrame:
         )
 
     df = pd.read_csv(path)
-    # BarChart standard: Symbol, Time, Open, High, Low, Last, Volume
-    # Some exports have "Date Time" or "Date" + "Time" columns. Auto-detect.
+    # BarChart Premier CSV columns: Time, Open, High, Low, Latest, Change, %Change, Volume[, Open Int]
+    # Older exports may use "Last" instead of "Latest". Data is typically sorted newest-first.
     cols = {c.lower(): c for c in df.columns}
     if "time" in cols:
         ts_col = cols["time"]
@@ -51,11 +51,16 @@ def load_dxy(timeframe: str, root: pathlib.Path | None = None) -> pd.DataFrame:
     else:
         raise ValueError(f"cannot find timestamp column in {list(df.columns)}")
 
+    # Close column: BarChart uses "Latest" on modern exports, "Last" on older ones
+    close_key = cols.get("latest") or cols.get("last") or cols.get("close")
+    if close_key is None:
+        raise ValueError(f"cannot find close/latest column in {list(df.columns)}")
+
     out = pd.DataFrame({
-        "open": pd.to_numeric(df[cols.get("open", "Open")], errors="coerce"),
-        "high": pd.to_numeric(df[cols.get("high", "High")], errors="coerce"),
-        "low":  pd.to_numeric(df[cols.get("low", "Low")], errors="coerce"),
-        "close": pd.to_numeric(df[cols.get("last", df.columns[5])], errors="coerce"),
+        "open": pd.to_numeric(df[cols["open"]], errors="coerce"),
+        "high": pd.to_numeric(df[cols["high"]], errors="coerce"),
+        "low":  pd.to_numeric(df[cols["low"]], errors="coerce"),
+        "close": pd.to_numeric(df[close_key], errors="coerce"),
         "volume": pd.to_numeric(df.get(cols.get("volume", "Volume"), 0), errors="coerce"),
     })
     out.index = pd.to_datetime(df[ts_col], utc=True, errors="coerce")
