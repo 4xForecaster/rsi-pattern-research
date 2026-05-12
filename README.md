@@ -17,7 +17,23 @@ Sequence appears to cycle M → C → V → C → M → … with some variabilit
 
 ## Status
 
-v0 scaffolding — definitions, detection logic, and validation framework in place. No statistical claims made yet.
+Strategy hardened across 14 hypothesis cycles (H1–H14). Production layout
+as of 2026-05-12:
+
+| Layer | TF | Spec | Role |
+|---|---|---|---|
+| **Execution (primary)** | **5m DXY** | [`results/H14_intraday_TRADING_SPEC.md`](results/H14_intraday_TRADING_SPEC.md) — strict-M, Scheme C, FLD (40/80/160) | Where trades are taken |
+| Execution (secondary) | 15m DXY | same spec, 15m params — caveated, 18 trades in calibration window | Slow-tape / confluence |
+| **Regime / bias filter** | Daily DXY | [`results/RSI_M_P1_TRADING_SPEC.md`](results/RSI_M_P1_TRADING_SPEC.md) v1.1 — loose-M, Scheme D | Situational overlay; NOT for entry timing |
+| 4h / 1h | DXY | Untested for production | Reference only |
+
+Step 4 of the hardening plan will wire the daily regime filter into the 5m
+execution layer (skip 5m entries when daily FLD is fully bullish).
+
+See [`results/H14_intraday_execution.md`](results/H14_intraday_execution.md)
+for the full intraday calibration findings and
+[`SYNOPSIS_2026-05-12.md`](SYNOPSIS_2026-05-12.md) for the cumulative
+research narrative.
 
 ## Scope (v1)
 
@@ -59,7 +75,12 @@ rsi-pattern-research/
 ├── src/rsi_pattern/
 │   ├── data.py                       # BarChart CSV loader
 │   ├── indicators.py                 # RSI(14), helpers
-│   ├── patterns.py                   # M / C / V detection
+│   ├── patterns.py                   # M / C / V detection (loose)
+│   ├── patterns_strict.py            # strict-M (origin<30, peaks≥75.01, wiggle≥70)
+│   ├── position_sizing.py            # SURF Fib trade engine
+│   ├── fld.py                        # Hurst FLD bias (daily + intraday cycles)
+│   ├── intraday.py                   # H14 intraday execution engine
+│   ├── risk_metrics.py               # Sharpe/Sortino/MAR + overlap-aware MTM
 │   ├── validate.py                   # statistical validation + fractal tests
 │   └── forecast.py                   # state-transition models
 ├── notebooks/01_dxy_exploration.ipynb

@@ -31,6 +31,28 @@ class TradeRecord:
     multiplier: float = 1.0  # FLD scheme multiplier
 
 
+@dataclass
+class MTMTrade:
+    """Trade with intra-trade bar-by-bar close prices for mark-to-market.
+
+    Used for overlap-aware intraday equity curves where multiple positions
+    can be open simultaneously.
+    """
+    entry_idx: int
+    exit_idx: int
+    entry_date: pd.Timestamp
+    exit_date: pd.Timestamp
+    entry_price: float
+    initial_stop: float
+    exit_price: float
+    direction: str = "long"
+    multiplier: float = 1.0
+    # spread (fractional, e.g. 0.0003 for 3 bps) charged on entry and exit price legs
+    spread: float = 0.0
+    # close series for the trade's life (entry..exit inclusive); index aligns with bar index
+    closes: Optional[pd.Series] = None
+
+
 def trades_from_fib(trades, df_index, multipliers: Optional[Sequence[float]] = None) -> list[TradeRecord]:
     """Convert FibTrade objects (with integer indices) to TradeRecord objects.
 
@@ -86,6 +108,61 @@ def build_equity_curve(
 
 def daily_returns(equity: pd.Series) -> pd.Series:
     return equity.pct_change().dropna()
+
+
+def build_equity_curve_mtm(
+    trades: Sequence[MTMTrade],
+    bar_close: pd.Series,
+    initial_capital: float = 1.0,
+    risk_per_trade: float = 0.01,
+) -> pd.Series:
+    """Overlap-aware mark-to-market equity curve for intraday strategies.
+
+    At each bar t:
+        equity[t] = initial_capital
+                  + Σ realized PnL from trades closed by bar t
+                  + Σ unrealized PnL from trades open at bar t (priced at close[t])
+
+    Units for each trade are fixed at entry: mult * risk * cap / (entry - stop).
+    Spread is fractional (e.g. 0.0003 = 3 bps) and is charged on both legs:
+        entry_eff = entry * (1 + spread)   (long pays a touch above)
+        exit_eff  = exit * (1 - spread)    (long sells a touch below)
+        realized  = units * (exit_eff - entry_eff)
+    """
+    if not trades:
+        return pd.Series([initial_capital], index=bar_close.index[:1], name="equity")
+
+    n = len(bar_close)
+    contrib = np.zeros(n, dtype=float)  # cumulative contribution from realized trades
+    open_mtm = np.zeros(n, dtype=float)  # per-bar unrealized MTM (recomputed)
+    idx_map = {ts: i for i, ts in enumerate(bar_close.index)}
+    close_arr = bar_close.values
+
+    for tr in trades:
+        if tr.direction != "long":
+            raise NotImplementedError("MTM short trades not yet supported")
+        risk_per_unit = tr.entry_price - tr.initial_stop
+        if risk_per_unit <= 0:
+            continue
+        units = tr.multiplier * risk_per_trade * initial_capital / risk_per_unit
+        entry_eff = tr.entry_price * (1.0 + tr.spread)
+        exit_eff = tr.exit_price * (1.0 - tr.spread)
+        realized = units * (exit_eff - entry_eff)
+
+        entry_pos = idx_map.get(tr.entry_date)
+        exit_pos = idx_map.get(tr.exit_date)
+        if entry_pos is None or exit_pos is None or exit_pos < entry_pos:
+            continue
+
+        # Unrealized MTM at every bar in [entry_pos, exit_pos)
+        if exit_pos > entry_pos:
+            open_mtm[entry_pos:exit_pos] += units * (close_arr[entry_pos:exit_pos] - entry_eff)
+
+        # Realized contribution from exit_pos onward
+        contrib[exit_pos:] += realized
+
+    equity = initial_capital + contrib + open_mtm
+    return pd.Series(equity, index=bar_close.index, name="equity")
 
 
 def sharpe(equity: pd.Series, periods_per_year: int = TRADING_DAYS) -> float:

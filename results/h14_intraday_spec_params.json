@@ -1,0 +1,165 @@
+{
+  "spec_name": "RSI_M_P1_INTRADAY",
+  "version": "1.0",
+  "spec_date": "2026-05-12",
+  "version_note": "v1.0 records H14 calibration: strict-M (30/72/72), intraday Hurst FLD cycles, overlap-aware MTM equity. 5m is primary execution layer; 15m caveated due to short data window (~104 days).",
+  "primary": {
+    "timeframe": "5m",
+    "instrument": "DXY",
+    "scheme": "C",
+    "scheme_label": "Aggressive (1/1/5)",
+    "calibration_window": ["2026-01-21", "2026-05-04"],
+    "calibration_window_days": 104,
+    "data_source": "BarChart Premier CSV (dxy_5m.csv, 19999 bars)"
+  },
+  "indicator": {
+    "name": "RSI",
+    "period": 14,
+    "smoothing": "Wilder RMA",
+    "column": "rsi14"
+  },
+  "pattern_detector": {
+    "type": "strict_M",
+    "source_function": "rsi_pattern.patterns_strict.detect_strict_m",
+    "thresholds": {
+      "rise_origin_below": 30.0,
+      "major_peak_min": 72.0,
+      "wiggle_trough_floor": 72.0,
+      "completion_threshold": 50.0
+    },
+    "bar_caps": {
+      "max_rise_bars": 60,
+      "max_top_zone_bars": 60,
+      "max_completion_bars": 60
+    },
+    "p1_anchor_field": "first_major_peak_idx",
+    "calibration_note": "thresholds from H14 Phase 1.2 grid sweep — loosest topology-respecting combo yielding max trade count"
+  },
+  "entry": {
+    "direction": "long",
+    "anchor_bar": "P1+1",
+    "trigger": "close_of_anchor_bar"
+  },
+  "reference_range": {
+    "rule": "pre_p1",
+    "lookback_bars_5m": 160,
+    "lookback_bars_15m": 64,
+    "lookback_basis": "1x longest FLD cycle (5m); 0.5x longest FLD cycle (15m); selected by Phase 1.4 Sortino sweep",
+    "formula": "range = high(P1) - min(low) over [P1 - lookback_bars, P1)"
+  },
+  "initial_stop": {
+    "rule": "structural",
+    "formula": "low(bar_of_pre_P1_floor)",
+    "atr_floor": false,
+    "rejected_alternative": "wider-of structural OR entry-1*ATR(14) — ATR(14) on 5m always tighter than structural, no-op (H14 Phase 2.7)"
+  },
+  "targets": {
+    "fib_multiples": [1.618, 2.236, 3.618],
+    "labels": ["T1", "T2", "T3"],
+    "T1_T2_adjust_stop": false,
+    "T3_action": "exit_at_T3_price"
+  },
+  "trail": {
+    "activation_factor": 3.600,
+    "rule": "min(low) over last 3 higher-high bars since entry, excluding inside bars",
+    "monotonic_upward_only": true
+  },
+  "exit": {
+    "priority_order": ["stop_hit", "T3_hit", "time_stop"],
+    "time_stop_bars_5m": 160,
+    "time_stop_bars_15m": 128,
+    "time_stop_basis": "1x longest FLD cycle"
+  },
+  "fld": {
+    "source_function": "rsi_pattern.fld.fld_bias",
+    "cycles_bars_5m": [40, 80, 160],
+    "cycles_bars_15m": [32, 64, 128],
+    "cycles_basis": "canonical Hurst 2x harmonic ladder (5m: 3h20m/6h40m/13h20m; 15m: 8h/16h/32h)",
+    "hurst_agent_canonical_for_intraday": null,
+    "hurst_agent_canonical_note": "hurst-agent DAILY_PERIODS = (10,20,40); no intraday map; using user-proposed harmonics",
+    "source": "(high + low) / 2",
+    "shift_formula": "period // 2 + 1",
+    "bias_rule": {
+      "bullish": "close > FLD for all cycles",
+      "bearish": "close < FLD for all cycles",
+      "neutral": "mixed"
+    }
+  },
+  "position_sizing": {
+    "scheme": "C",
+    "scheme_label": "Aggressive 1x/1x/5x",
+    "base_risk_fraction": 0.01,
+    "multipliers": {
+      "bullish": 1.0,
+      "neutral": 1.0,
+      "bearish": 5.0
+    },
+    "units_formula": "mult * base_risk * equity / (entry_close - initial_stop)",
+    "parallel_positions_allowed": true,
+    "concurrency_cap": null,
+    "historical_peak_exposure_x_estimate": 14,
+    "mtm_required": true,
+    "mtm_function": "rsi_pattern.risk_metrics.build_equity_curve_mtm"
+  },
+  "execution_costs": {
+    "spread_fractional_5m": 0.0003,
+    "spread_fractional_15m": 0.00025,
+    "spread_basis": "3 bps on 5m, 2.5 bps on 15m — conservative retail FX assumption (1-2 pips on DXY ≈ 1.5-3 bps)",
+    "applied": "entry price raised by spread for longs; exit price lowered by spread for longs"
+  },
+  "annualization": {
+    "bars_per_year_5m": 72576,
+    "bars_per_year_15m": 24192,
+    "basis": "252 trading days * intraday bars/day"
+  },
+  "expected_stats_5m_scheme_C": {
+    "trades": 69,
+    "mean_R_weighted": 1.77,
+    "total_R_per_year": 442.38,
+    "sharpe": 4.03,
+    "sortino": 6.19,
+    "calmar": 59.62,
+    "mar": 47.51,
+    "max_dd_equity_fraction": -0.1351,
+    "warning": "metrics annualized off 3.5-month window — extrapolation, not steady-state"
+  },
+  "secondary_15m": {
+    "trades": 18,
+    "mean_R_weighted": 2.15,
+    "sortino": 3.28,
+    "max_dd": -0.1515,
+    "validity": "BELOW 20-trade floor — informational only"
+  },
+  "secondary_15m_hypothesis": {
+    "config": "loose-M + pre-entry range + wider-ATR stop (v_all in H14 Phase 2.7)",
+    "trades": 84,
+    "sortino": 13.76,
+    "max_dd": -0.151,
+    "validity": "crosses trade-count floor but inverts every knob from 5m winner; needs out-of-sample retest on longer history before adoption"
+  },
+  "regime_overlay_pending": {
+    "rule": "skip 5m entry if daily FLD bias = 'bullish (all 3 cycles below price)'",
+    "rationale": "preserves daily Scheme D's selectivity at the 5m execution layer",
+    "implementation_status": "not yet wired; planned for Step 4 hurst-agent integration"
+  },
+  "h14_calibration_provenance": {
+    "phase_1_2_grid_sweep": "27 cells over origin x peak x wiggle; chosen = max-trade-count topology-respecting cell",
+    "phase_1_4_range_lookback_sweep": "0.5x/1x/2x of longest FLD cycle; chose 1x on 5m (Sortino +5.52 vs +2.36 / +5.31)",
+    "phase_2_5_scheme_sweep": "A/B/C/D/E; chose C on 5m (Sortino +6.19; beats D +5.52 by 12%)",
+    "phase_2_7_ablation": "5m baseline wins all knob swaps; 15m v_all wins (Sortino +13.76) but separate optimum"
+  },
+  "source_of_truth": {
+    "engine": "src/rsi_pattern/intraday.py",
+    "mtm": "src/rsi_pattern/risk_metrics.py::build_equity_curve_mtm",
+    "runner": "scripts/h14_intraday_backtest.py",
+    "writeup": "results/H14_intraday_execution.md",
+    "raw_run_dump": "results/_h14_run.json"
+  },
+  "caveats": [
+    "104-day data window — Sortino +6 is regime-specific, not steady-state",
+    "Scheme C peak exposure ~14x; verify margin",
+    "No daily-regime overlay yet (Step 4)",
+    "MTM assumes infinite intraday liquidity; news-window slippage will exceed 3 bps",
+    "Strict-M thresholds calibrated on the same window used for evaluation — borderline paper-fit, needs OOS validation"
+  ]
+}

@@ -1,0 +1,376 @@
+{
+  "data_window": {
+    "5m": [
+      "2026-01-21 00:40:00+00:00",
+      "2026-05-04 23:55:00+00:00",
+      19999
+    ],
+    "15m": [
+      "2026-01-21 00:30:00+00:00",
+      "2026-05-04 23:45:00+00:00",
+      6705
+    ]
+  },
+  "fld_cycles": {
+    "5m": [
+      40,
+      80,
+      160
+    ],
+    "15m": [
+      32,
+      64,
+      128
+    ]
+  },
+  "time_stop_bars": {
+    "5m": 160,
+    "15m": 128
+  },
+  "spread": {
+    "5m": 0.0003,
+    "15m": 0.00025
+  },
+  "strict_cfg": {
+    "rise_origin_below": 30.0,
+    "major_peak_min": 72.0,
+    "wiggle_trough_floor": 72.0,
+    "completion_threshold": 50.0
+  },
+  "phase_1_4": {
+    "5m": [
+      {
+        "scheme": "5m lookback=80",
+        "trades": 46,
+        "mean_R_weighted": 1.8318984751005083,
+        "total_R_per_year": 304.73903197426927,
+        "sharpe": 1.5448121461655646,
+        "sortino": 2.361638393997361,
+        "calmar": 4.465052528887338,
+        "mar": 3.7060665192546947,
+        "max_dd": -0.3260448116986494,
+        "lookback_bars": 80,
+        "lookback_label": "0.5x"
+      },
+      {
+        "scheme": "5m lookback=160",
+        "trades": 46,
+        "mean_R_weighted": 1.6810025695328947,
+        "total_R_per_year": 279.63727398026674,
+        "sharpe": 3.639158149330742,
+        "sortino": 5.5241987420548835,
+        "calmar": 36.513206852492466,
+        "mar": 30.691376700473008,
+        "max_dd": -0.09174779350703322,
+        "lookback_bars": 160,
+        "lookback_label": "1x"
+      },
+      {
+        "scheme": "5m lookback=320",
+        "trades": 46,
+        "mean_R_weighted": 1.4283020940202085,
+        "total_R_per_year": 237.60017458099537,
+        "sharpe": 3.5632457566976425,
+        "sortino": 5.3116009770633665,
+        "calmar": 33.870413834351396,
+        "mar": 23.512123266833385,
+        "max_dd": -0.0916737013720631,
+        "lookback_bars": 320,
+        "lookback_label": "2x"
+      }
+    ],
+    "15m": [
+      {
+        "scheme": "15m lookback=64",
+        "trades": 15,
+        "mean_R_weighted": 1.6883871750445347,
+        "total_R_per_year": 142.311557465773,
+        "sharpe": 2.013849086950431,
+        "sortino": 2.974475736828846,
+        "calmar": 6.553891125723837,
+        "mar": 5.587584482212542,
+        "max_dd": -0.11519110987668024,
+        "lookback_bars": 64,
+        "lookback_label": "0.5x"
+      },
+      {
+        "scheme": "15m lookback=128",
+        "trades": 15,
+        "mean_R_weighted": 1.6883871750445347,
+        "total_R_per_year": 142.311557465773,
+        "sharpe": 2.013849086950431,
+        "sortino": 2.974475736828846,
+        "calmar": 6.553891125723837,
+        "mar": 5.587584482212542,
+        "max_dd": -0.11519110987668024,
+        "lookback_bars": 128,
+        "lookback_label": "1x"
+      },
+      {
+        "scheme": "15m lookback=256",
+        "trades": 15,
+        "mean_R_weighted": 0.4881850591695001,
+        "total_R_per_year": 41.14836758345997,
+        "sharpe": 0.25808966724031207,
+        "sortino": 0.3509209140420707,
+        "calmar": 0.28798998331342457,
+        "mar": 0.2538936164426621,
+        "max_dd": -0.12923333593395459,
+        "lookback_bars": 256,
+        "lookback_label": "2x"
+      }
+    ]
+  },
+  "chosen_lookbacks": {
+    "5m": 160,
+    "15m": 64
+  },
+  "phase_2_5": {
+    "5m": [
+      {
+        "scheme": "A. Pure parallel (1/1/1)",
+        "trades": 69,
+        "mean_R_weighted": 0.9123932222737015,
+        "total_R_per_year": 227.6669513470038,
+        "sharpe": 3.420873813210114,
+        "sortino": 4.98270848479957,
+        "calmar": 31.338758928202434,
+        "mar": 24.768354033595216,
+        "max_dd": -0.07367900767828806
+      },
+      {
+        "scheme": "B. Modest (1/1/3)",
+        "trades": 69,
+        "mean_R_weighted": 1.3426390884488524,
+        "total_R_per_year": 335.0250095728721,
+        "sharpe": 3.9825462921020223,
+        "sortino": 6.023887269822804,
+        "calmar": 51.31214077958151,
+        "mar": 40.68208061139797,
+        "max_dd": -0.0916737013720631
+      },
+      {
+        "scheme": "C. Aggressive (1/1/5)",
+        "trades": 69,
+        "mean_R_weighted": 1.7728849546240029,
+        "total_R_per_year": 442.38306779874017,
+        "sharpe": 4.028612750294327,
+        "sortino": 6.188220533999159,
+        "calmar": 59.62439694178645,
+        "mar": 47.50738034211717,
+        "max_dd": -0.1350584774865452
+      },
+      {
+        "scheme": "D. Skip bullish + 3x (0/1/3)",
+        "trades": 46,
+        "mean_R_weighted": 1.6810025695328947,
+        "total_R_per_year": 279.63727398026674,
+        "sharpe": 3.639158149330742,
+        "sortino": 5.5241987420548835,
+        "calmar": 36.513206852492466,
+        "mar": 30.691376700473008,
+        "max_dd": -0.09174779350703322
+      },
+      {
+        "scheme": "E. Conservative (0.5/1/3)",
+        "trades": 69,
+        "mean_R_weighted": 1.2316537340687246,
+        "total_R_per_year": 307.3311417765695,
+        "sharpe": 3.841565521436469,
+        "sortino": 5.820400631031795,
+        "calmar": 43.494611770775236,
+        "mar": 35.50730367829291,
+        "max_dd": -0.0916737013720631
+      }
+    ],
+    "15m": [
+      {
+        "scheme": "A. Pure parallel (1/1/1)",
+        "trades": 18,
+        "mean_R_weighted": 0.4284750686264902,
+        "total_R_per_year": 41.42660792183618,
+        "sharpe": 0.41496350965650536,
+        "sortino": 0.6037501034625633,
+        "calmar": 0.6009340133220096,
+        "mar": 0.5288926732805118,
+        "max_dd": -0.111909850985213
+      },
+      {
+        "scheme": "B. Modest (1/1/3)",
+        "trades": 18,
+        "mean_R_weighted": 1.2886886589423414,
+        "total_R_per_year": 124.59534688553562,
+        "sharpe": 1.6705323802986327,
+        "sortino": 2.461494653917679,
+        "calmar": 5.013203209548148,
+        "mar": 4.299738505176556,
+        "max_dd": -0.12092506197105712
+      },
+      {
+        "scheme": "C. Aggressive (1/1/5)",
+        "trades": 18,
+        "mean_R_weighted": 2.1489022492581924,
+        "total_R_per_year": 207.76408584923507,
+        "sharpe": 2.1760433068393907,
+        "sortino": 3.2766380235570205,
+        "calmar": 8.764866312292748,
+        "mar": 7.3243743263663905,
+        "max_dd": -0.15147680391428076
+      },
+      {
+        "scheme": "D. Skip bullish + 3x (0/1/3)",
+        "trades": 15,
+        "mean_R_weighted": 1.6883871750445347,
+        "total_R_per_year": 142.311557465773,
+        "sharpe": 2.013849086950431,
+        "sortino": 2.974475736828846,
+        "calmar": 6.553891125723837,
+        "mar": 5.587584482212542,
+        "max_dd": -0.11519110987668024
+      },
+      {
+        "scheme": "E. Conservative (0.5/1/3)",
+        "trades": 18,
+        "mean_R_weighted": 1.3478389857397268,
+        "total_R_per_year": 130.31422664332106,
+        "sharpe": 1.8470158721367496,
+        "sortino": 2.7289909180152496,
+        "calmar": 5.770490075134,
+        "mar": 4.934452030844975,
+        "max_dd": -0.1177282963390488
+      }
+    ]
+  },
+  "bias_counts": {
+    "5m": {
+      "neutral": 38,
+      "bullish": 23,
+      "bearish": 8
+    },
+    "15m": {
+      "neutral": 11,
+      "bearish": 4,
+      "bullish": 3
+    }
+  },
+  "winners": {
+    "5m": "C. Aggressive (1/1/5)",
+    "15m": "C. Aggressive (1/1/5)"
+  },
+  "phase_2_7": {
+    "5m": [
+      {
+        "scheme": "baseline (strict/struct/pre-P1)",
+        "trades": 69,
+        "mean_R_weighted": 1.7728849546240029,
+        "total_R_per_year": 442.38306779874017,
+        "sharpe": 4.028612750294327,
+        "sortino": 6.188220533999159,
+        "calmar": 59.62439694178645,
+        "mar": 47.50738034211717,
+        "max_dd": -0.1350584774865452
+      },
+      {
+        "scheme": "v1 loose-M",
+        "trades": 254,
+        "mean_R_weighted": 1.9821452688694348,
+        "total_R_per_year": 1785.345185451053,
+        "sharpe": 3.1317183760450797,
+        "sortino": 5.476800169435128,
+        "calmar": 42.12503478807562,
+        "mar": 112.01807185734157,
+        "max_dd": -0.5556080844830928
+      },
+      {
+        "scheme": "v2 wider stop (ATR)",
+        "trades": 69,
+        "mean_R_weighted": 1.7728849546240029,
+        "total_R_per_year": 442.38306779874017,
+        "sharpe": 4.028612750294327,
+        "sortino": 6.188220533999159,
+        "calmar": 59.62439694178645,
+        "mar": 47.50738034211717,
+        "max_dd": -0.1350584774865452
+      },
+      {
+        "scheme": "v3 pre-entry range",
+        "trades": 69,
+        "mean_R_weighted": 7.67029907008007,
+        "total_R_per_year": 1913.9484627616382,
+        "sharpe": -0.5619736129049442,
+        "sortino": -0.695685698462039,
+        "calmar": null,
+        "mar": null,
+        "max_dd": -2.8193540704697524
+      },
+      {
+        "scheme": "v_all (loose+wider+pre-entry)",
+        "trades": 253,
+        "mean_R_weighted": 3.4701947147370356,
+        "total_R_per_year": 3113.3458325058104,
+        "sharpe": 1.7383008005718936,
+        "sortino": 2.6527762731938207,
+        "calmar": 11.590433397662807,
+        "mar": 7.7179391958863635,
+        "max_dd": -0.44716683162351734
+      }
+    ],
+    "15m": [
+      {
+        "scheme": "baseline (strict/struct/pre-P1)",
+        "trades": 18,
+        "mean_R_weighted": 2.1489022492581924,
+        "total_R_per_year": 207.76408584923507,
+        "sharpe": 2.1760433068393907,
+        "sortino": 3.2766380235570205,
+        "calmar": 8.764866312292748,
+        "mar": 7.3243743263663905,
+        "max_dd": -0.15147680391428076
+      },
+      {
+        "scheme": "v1 loose-M",
+        "trades": 83,
+        "mean_R_weighted": 1.2795019475188856,
+        "total_R_per_year": 376.5928268494723,
+        "sharpe": 3.3026473790858146,
+        "sortino": 4.46202691473195,
+        "calmar": 12.329486965442355,
+        "mar": 20.224346419456484,
+        "max_dd": -0.22321325113509372
+      },
+      {
+        "scheme": "v2 wider stop (ATR)",
+        "trades": 18,
+        "mean_R_weighted": 2.1489022492581924,
+        "total_R_per_year": 207.76408584923507,
+        "sharpe": 2.1760433068393907,
+        "sortino": 3.2766380235570205,
+        "calmar": 8.764866312292748,
+        "mar": 7.3243743263663905,
+        "max_dd": -0.15147680391428076
+      },
+      {
+        "scheme": "v3 pre-entry range",
+        "trades": 18,
+        "mean_R_weighted": 4.16822819485659,
+        "total_R_per_year": 409.0151681654425,
+        "sharpe": 3.274922887687121,
+        "sortino": 6.821113542457295,
+        "calmar": 24.530752794493655,
+        "mar": 19.52269200892151,
+        "max_dd": -0.13589132669771653
+      },
+      {
+        "scheme": "v_all (loose+wider+pre-entry)",
+        "trades": 84,
+        "mean_R_weighted": 3.2550749062744844,
+        "total_R_per_year": 979.1073843079167,
+        "sharpe": 6.644817168091145,
+        "sortino": 13.759869845872938,
+        "calmar": 170.12322497001458,
+        "mar": 232.45241870809198,
+        "max_dd": -0.15102023819550936
+      }
+    ]
+  }
+}
