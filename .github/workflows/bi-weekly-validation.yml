@@ -1,0 +1,56 @@
+name: bi-weekly-validation
+# Bi-weekly re-validation of the daily Scheme D regime layer.
+#
+# Fetches DXY daily from yfinance, re-runs H12 Scheme D backtest, compares
+# OOS Sortino to the H12 +5.75 benchmark, posts a Telegram drift verdict.
+#
+# Scope: daily regime layer only. The 5m execution layer (H14 strict-M
+# + Scheme C) requires the BarChart 5m CSV which isn't on cloud — its
+# validation stays manual via scripts/h17_walkforward_strict_m.py +
+# scripts/h19 on Dr. A's machine.
+#
+# Tripwires (per scripts/bi_weekly_validation.py):
+#   - test_sortino in [4.0, 7.5]  → GREEN (exit 0)
+#   - test_sortino in (2.5, 4.0) ∪ (7.5, 9.0)  → YELLOW (exit 1)
+#   - test_sortino < 2.5 or > 9.0 → RED / anomaly (exit 2 / 1)
+
+on:
+  schedule:
+    # 02:00 UTC on the 1st and 15th of every month — approximately
+    # bi-weekly, deterministic, doesn't drift across DST boundaries.
+    - cron: "0 2 1,15 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          # Install the package itself (this IS the rsi-pattern-research repo).
+          # Pulling yfinance from optional? No — it's a runtime dep for the
+          # bi-weekly script. Install via pip directly so we don't need a
+          # pyproject change.
+          pip install -e .
+          pip install yfinance>=0.2.40
+
+      - name: Run bi-weekly validation
+        run: python scripts/bi_weekly_validation.py
+        env:
+          PYTHONUNBUFFERED: "1"
+          # Telegram secrets must exist on this repo (see screenshot 2026-05-12
+          # showing both TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID configured).
+          # Missing creds → script prints to stdout and exits cleanly.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
