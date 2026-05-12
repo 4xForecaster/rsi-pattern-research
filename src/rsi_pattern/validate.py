@@ -90,6 +90,157 @@ def fractal_compare(
     return out
 
 
+def m_lifecycle_stats(df: pd.DataFrame, rsi_col: str = "rsi14", cfg=None) -> dict:
+    """Duration and amplitude statistics for completed M patterns.
+
+    Duration = bars from P1 to completion (RSI cross below 50).
+    Amplitude = max(peak_RSI) - min(dip_RSI) within the M, in RSI units.
+
+    Returns a dict of (durations, amplitudes, summary) for all completed Ms.
+    """
+    from .patterns import detect_m, PatternConfig
+    cfg = cfg or PatternConfig()
+    rsi = df[rsi_col].dropna()
+    rsi_arr = rsi.to_numpy()
+    durations, amplitudes = [], []
+    for p in detect_m(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        p1, p2 = p.anchors
+        comp = p.completed_idx
+        dip_level = float(rsi_arr[p1:p2 + 1].min())
+        peak_level = float(max(rsi_arr[p1], rsi_arr[p2]))
+        durations.append(comp - p1)
+        amplitudes.append(peak_level - dip_level)
+    return {
+        "n_patterns": len(durations),
+        "duration_bars": {
+            "mean": float(np.mean(durations)) if durations else 0,
+            "median": float(np.median(durations)) if durations else 0,
+            "std": float(np.std(durations)) if durations else 0,
+            "values": durations,
+        },
+        "amplitude_rsi": {
+            "mean": float(np.mean(amplitudes)) if amplitudes else 0,
+            "median": float(np.median(amplitudes)) if amplitudes else 0,
+            "std": float(np.std(amplitudes)) if amplitudes else 0,
+            "values": amplitudes,
+        },
+    }
+
+
+def v_lifecycle_stats(df: pd.DataFrame, rsi_col: str = "rsi14", cfg=None) -> dict:
+    """Mirror of m_lifecycle_stats for V patterns."""
+    from .patterns import detect_v, PatternConfig
+    cfg = cfg or PatternConfig()
+    rsi = df[rsi_col].dropna()
+    rsi_arr = rsi.to_numpy()
+    durations, amplitudes = [], []
+    for p in detect_v(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        t1, t2 = p.anchors
+        comp = p.completed_idx
+        peak_level = float(rsi_arr[t1:t2 + 1].max())
+        trough_level = float(min(rsi_arr[t1], rsi_arr[t2]))
+        durations.append(comp - t1)
+        amplitudes.append(peak_level - trough_level)
+    return {
+        "n_patterns": len(durations),
+        "duration_bars": {
+            "mean": float(np.mean(durations)) if durations else 0,
+            "median": float(np.median(durations)) if durations else 0,
+            "std": float(np.std(durations)) if durations else 0,
+            "values": durations,
+        },
+        "amplitude_rsi": {
+            "mean": float(np.mean(amplitudes)) if amplitudes else 0,
+            "median": float(np.median(amplitudes)) if amplitudes else 0,
+            "std": float(np.std(amplitudes)) if amplitudes else 0,
+            "values": amplitudes,
+        },
+    }
+
+
+def trough_breach_signals(
+    df: pd.DataFrame,
+    rsi_col: str = "rsi14",
+    cfg=None,
+) -> dict[str, list[dict]]:
+    """Detect three structural breach signals:
+
+    - 'm_dip_breach': RSI breaks below the inner dip between P1 and P2 (after P2).
+      EMPIRICALLY a LONG signal on DXY (forward returns positive at 5-20 bar horizons).
+    - 'm_bottom_breach': RSI breaks below the M's structural floor (min of trough-before-P1
+      and trough-after-P2). Weak SHORT signal at 20+ bar horizons (d ≈ -0.2 to -0.4).
+    - 'v_floor_breach': RSI breaks below V's floor (min of T1, T2 levels). STRONG SHORT
+      signal across all timeframes (d ≈ -1.5 on daily 20-bar).
+
+    Returns {signal_name: list of {signal_idx, ...metadata}}.
+    See results/H3_trough_breach.md for empirical analysis.
+    """
+    from .patterns import detect_m, detect_v, PatternConfig
+    from scipy.signal import find_peaks
+
+    cfg = cfg or PatternConfig()
+    rsi = df[rsi_col].dropna()
+    rsi_arr = rsi.to_numpy()
+    n = len(rsi_arr)
+
+    trough_idx, _ = find_peaks(
+        -rsi_arr,
+        prominence=cfg.min_peak_prominence,
+        distance=cfg.min_peak_distance_bars,
+    )
+
+    signals: dict[str, list[dict]] = {
+        "m_dip_breach": [],
+        "m_bottom_breach": [],
+        "v_floor_breach": [],
+    }
+
+    for p in detect_m(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        p1, p2 = p.anchors
+        dip_level = float(rsi_arr[p1:p2 + 1].min())
+        # m_dip_breach: first bar after P2 where RSI < dip_level
+        for i in range(p2 + 1, min(p2 + 200, n)):
+            if rsi_arr[i] < dip_level:
+                signals["m_dip_breach"].append({
+                    "signal_idx": i, "P1": p1, "P2": p2, "dip_level": dip_level,
+                })
+                break
+        # m_bottom_breach: outer floor
+        before_t = trough_idx[trough_idx < p1]
+        after_t = trough_idx[trough_idx > p2]
+        if len(before_t) and len(after_t):
+            prev_t, post_t = int(before_t[-1]), int(after_t[0])
+            m_bottom = min(float(rsi_arr[prev_t]), float(rsi_arr[post_t]))
+            for i in range(post_t + 1, min(post_t + 200, n)):
+                if rsi_arr[i] < m_bottom:
+                    signals["m_bottom_breach"].append({
+                        "signal_idx": i, "P1": p1, "P2": p2,
+                        "prev_trough": prev_t, "post_trough": post_t,
+                        "m_bottom_level": m_bottom,
+                    })
+                    break
+
+    for p in detect_v(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        t1, t2 = p.anchors
+        floor_level = float(min(rsi_arr[t1], rsi_arr[t2]))
+        for i in range(t2 + 1, min(t2 + 200, n)):
+            if rsi_arr[i] < floor_level:
+                signals["v_floor_breach"].append({
+                    "signal_idx": i, "T1": t1, "T2": t2, "floor_level": floor_level,
+                })
+                break
+
+    return signals
+
+
 def event_conditional_returns(
     df: pd.DataFrame,
     states: pd.Series,
