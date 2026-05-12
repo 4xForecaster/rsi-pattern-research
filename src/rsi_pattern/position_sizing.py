@@ -1,0 +1,329 @@
+"""Position sizing + SURF-style Fibonacci targets + 3-bar trailing stop.
+
+Per Dr. A's specification (2026-05-12):
+
+The RANGE is defined by the price corresponding to the RSI pattern's
+highest-high and the subsequent lowest-low in price. Fibonacci targets
+are projected at 1.618x, 2.236x, and 3.618x that range, in the direction
+of the trade.
+
+A 3-bar trailing stop activates as price approaches the final target.
+The stop is placed at the low of the last 3 higher-high bars
+(excluding inside bars) for long trades; mirror for shorts.
+
+Note: Interpretation is provisional. Dr. A's "RSI & Ghost Patterns"
+repo (private) may have a more precise definition of how the range is
+anchored to RSI peaks/troughs. This implementation uses the M-pattern's
+P1-to-completion price excursion as the reference range for long trades,
+and the V-pattern's peak-to-trough price excursion for short trades.
+"""
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Literal, Optional
+import numpy as np
+import pandas as pd
+
+from .patterns import detect_m, detect_v, PatternConfig
+
+FIB_LEVELS = (1.618, 2.236, 3.618)  # T1, T2, T3 multipliers
+
+
+@dataclass
+class FibTrade:
+    direction: Literal["long", "short"]
+    entry_idx: int
+    entry_price: float
+    range_size: float                  # absolute price units
+    range_high_idx: int                # bar index of the range's high
+    range_low_idx: int                 # bar index of the range's low
+    initial_stop: float                # initial structural stop price
+    targets: list[float]               # T1, T2, T3 absolute prices
+    exit_idx: Optional[int] = None
+    exit_price: Optional[float] = None
+    exit_reason: str = ""              # "T1" / "T2" / "T3" / "stop" / "time"
+
+    @property
+    def risk(self) -> float:
+        """Absolute price risk per unit at entry."""
+        return abs(self.entry_price - self.initial_stop)
+
+    @property
+    def gross_return(self) -> Optional[float]:
+        if self.exit_price is None:
+            return None
+        if self.direction == "long":
+            return np.log(self.exit_price) - np.log(self.entry_price)
+        return np.log(self.entry_price) - np.log(self.exit_price)
+
+    @property
+    def r_multiple(self) -> Optional[float]:
+        """Return as multiple of initial risk (R)."""
+        if self.exit_price is None or self.risk == 0:
+            return None
+        gain = (self.exit_price - self.entry_price) if self.direction == "long" \
+               else (self.entry_price - self.exit_price)
+        return gain / self.risk
+
+
+def define_fib_range_long(df: pd.DataFrame, p1_idx: int, completion_idx: Optional[int],
+                          high_col: str = "high", low_col: str = "low") -> tuple[float, int, int]:
+    """For a LONG entry at P1+1 on an M pattern, define the reference range
+    as the price excursion of the rise leg PLUS the M's local fall.
+
+    Range = high(P1) - low(rise_origin region)
+    The reference 'low' is the most recent price low BEFORE P1 (the prior V's
+    bottom or local price floor).
+    """
+    n = len(df)
+    if p1_idx <= 0:
+        return 0.0, 0, p1_idx
+    # Lookback for the local price low before P1
+    lookback = min(p1_idx, 60)
+    seg = df.iloc[p1_idx - lookback:p1_idx]
+    low_idx = int(seg[low_col].idxmin().to_pydatetime().timestamp() if False else seg[low_col].argmin() + (p1_idx - lookback))
+    # Simpler integer-position approach:
+    low_pos = (df.iloc[p1_idx - lookback:p1_idx][low_col].values).argmin() + (p1_idx - lookback)
+    price_low = float(df[low_col].iloc[low_pos])
+    price_high = float(df[high_col].iloc[p1_idx])
+    range_size = price_high - price_low
+    return range_size, p1_idx, low_pos
+
+
+def define_fib_range_short(df: pd.DataFrame, t2_idx: int, breach_idx: int,
+                            high_col: str = "high", low_col: str = "low") -> tuple[float, int, int]:
+    """For a SHORT entry on V-floor breach, define the reference range as
+    the V's price height: the local price high before/within V minus the
+    V's lowest price.
+    """
+    n = len(df)
+    if breach_idx <= 0:
+        return 0.0, 0, breach_idx
+    # Lookback for the local price high before V's floor breach
+    lookback = min(breach_idx, 60)
+    seg = df.iloc[breach_idx - lookback:breach_idx]
+    high_pos = (df.iloc[breach_idx - lookback:breach_idx][high_col].values).argmax() + (breach_idx - lookback)
+    # Low is the V's floor (or the breach bar's low)
+    low_pos = (df.iloc[breach_idx - lookback:breach_idx][low_col].values).argmin() + (breach_idx - lookback)
+    price_high = float(df[high_col].iloc[high_pos])
+    price_low = float(df[low_col].iloc[low_pos])
+    range_size = price_high - price_low
+    return range_size, high_pos, low_pos
+
+
+def compute_fib_targets(entry_price: float, range_size: float,
+                         direction: Literal["long", "short"]) -> list[float]:
+    """Return T1, T2, T3 absolute prices."""
+    if direction == "long":
+        return [entry_price + lvl * range_size for lvl in FIB_LEVELS]
+    return [entry_price - lvl * range_size for lvl in FIB_LEVELS]
+
+
+def three_bar_trailing_stop_long(df: pd.DataFrame, start_idx: int, current_idx: int,
+                                  low_col: str = "low", high_col: str = "high") -> float:
+    """Return the trailing stop level (long position) at current_idx.
+
+    Stop = low of the last 3 bars where the bar made a higher-high,
+    EXCLUDING inside bars (high < prev_high AND low > prev_low).
+    """
+    # Walk back from current_idx
+    higher_high_bars = []
+    last_high = -np.inf
+    for i in range(start_idx, current_idx + 1):
+        h, l = df[high_col].iloc[i], df[low_col].iloc[i]
+        if i > start_idx:
+            prev_h = df[high_col].iloc[i - 1]
+            prev_l = df[low_col].iloc[i - 1]
+            # Inside bar?
+            if h < prev_h and l > prev_l:
+                continue
+        if h > last_high:
+            higher_high_bars.append((i, l))
+            last_high = h
+    if len(higher_high_bars) < 3:
+        return -np.inf
+    last3_lows = [low for (_, low) in higher_high_bars[-3:]]
+    return float(min(last3_lows))
+
+
+def three_bar_trailing_stop_short(df: pd.DataFrame, start_idx: int, current_idx: int,
+                                   low_col: str = "low", high_col: str = "high") -> float:
+    """Mirror of trailing-stop-long for short positions.
+    Stop = high of the last 3 lower-low bars, excluding inside bars."""
+    lower_low_bars = []
+    last_low = np.inf
+    for i in range(start_idx, current_idx + 1):
+        h, l = df[high_col].iloc[i], df[low_col].iloc[i]
+        if i > start_idx:
+            prev_h = df[high_col].iloc[i - 1]
+            prev_l = df[low_col].iloc[i - 1]
+            if h < prev_h and l > prev_l:
+                continue
+        if l < last_low:
+            lower_low_bars.append((i, h))
+            last_low = l
+    if len(lower_low_bars) < 3:
+        return np.inf
+    last3_highs = [high for (_, high) in lower_low_bars[-3:]]
+    return float(max(last3_highs))
+
+
+def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
+                        max_bars: int = 200,
+                        trailing_after_target_idx: int = 1,
+                        close_col: str = "close", high_col: str = "high",
+                        low_col: str = "low") -> FibTrade:
+    """Walk forward bar-by-bar to find the exit.
+
+    Logic:
+    - Exit at initial_stop if price hits it before T1
+    - After hitting T1: keep position open targeting T2
+    - After T2: switch to 3-bar trailing stop until T3 or trail-out
+    - Hard cap: max_bars
+    """
+    n = len(df)
+    end = min(trade.entry_idx + max_bars, n)
+    targets_hit = []
+    stop = trade.initial_stop
+
+    for i in range(trade.entry_idx + 1, end):
+        bar_high = float(df[high_col].iloc[i])
+        bar_low = float(df[low_col].iloc[i])
+        close = float(df[close_col].iloc[i])
+
+        if trade.direction == "long":
+            # Check stop hit
+            if bar_low <= stop:
+                trade.exit_idx = i
+                trade.exit_price = stop
+                trade.exit_reason = "stop" if not targets_hit else f"trail_after_{targets_hit[-1]}"
+                return trade
+            # Check targets
+            for t_idx, t_price in enumerate(trade.targets):
+                tname = f"T{t_idx + 1}"
+                if bar_high >= t_price and tname not in targets_hit:
+                    targets_hit.append(tname)
+                    if tname == "T3":
+                        trade.exit_idx = i
+                        trade.exit_price = t_price
+                        trade.exit_reason = "T3"
+                        return trade
+            # If T1+ hit and we've reached "trailing zone", update trailing stop
+            if len(targets_hit) >= trailing_after_target_idx:
+                trail = three_bar_trailing_stop_long(df, trade.entry_idx, i, low_col, high_col)
+                if trail > stop:
+                    stop = trail
+
+        else:  # short
+            if bar_high >= stop:
+                trade.exit_idx = i
+                trade.exit_price = stop
+                trade.exit_reason = "stop" if not targets_hit else f"trail_after_{targets_hit[-1]}"
+                return trade
+            for t_idx, t_price in enumerate(trade.targets):
+                tname = f"T{t_idx + 1}"
+                if bar_low <= t_price and tname not in targets_hit:
+                    targets_hit.append(tname)
+                    if tname == "T3":
+                        trade.exit_idx = i
+                        trade.exit_price = t_price
+                        trade.exit_reason = "T3"
+                        return trade
+            if len(targets_hit) >= trailing_after_target_idx:
+                trail = three_bar_trailing_stop_short(df, trade.entry_idx, i, low_col, high_col)
+                if trail < stop:
+                    stop = trail
+
+    # Time exit
+    trade.exit_idx = end - 1
+    trade.exit_price = float(df[close_col].iloc[end - 1])
+    trade.exit_reason = f"time (targets hit: {','.join(targets_hit) or 'none'})"
+    return trade
+
+
+def fib_long_at_p1(df: pd.DataFrame, rsi_col: str = "rsi14",
+                    cfg: PatternConfig | None = None,
+                    trailing_after_target_idx: int = 1,
+                    max_bars: int = 200) -> list[FibTrade]:
+    cfg = cfg or PatternConfig()
+    rsi = df[rsi_col].dropna()
+    trades = []
+    for p in detect_m(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        entry_idx = p.anchors[0] + 1
+        if entry_idx >= len(df):
+            continue
+        entry_price = float(df["close"].iloc[entry_idx])
+        range_size, hi_idx, lo_idx = define_fib_range_long(df, p.anchors[0], p.completed_idx)
+        if range_size <= 0:
+            continue
+        initial_stop = float(df["low"].iloc[lo_idx])
+        targets = compute_fib_targets(entry_price, range_size, "long")
+        t = FibTrade(direction="long", entry_idx=entry_idx, entry_price=entry_price,
+                     range_size=range_size, range_high_idx=hi_idx, range_low_idx=lo_idx,
+                     initial_stop=initial_stop, targets=targets)
+        t = simulate_fib_trade(df, t, max_bars=max_bars,
+                               trailing_after_target_idx=trailing_after_target_idx)
+        trades.append(t)
+    return trades
+
+
+def fib_short_at_v_floor(df: pd.DataFrame, rsi_col: str = "rsi14",
+                          cfg: PatternConfig | None = None,
+                          trailing_after_target_idx: int = 1,
+                          max_bars: int = 200) -> list[FibTrade]:
+    from scipy.signal import find_peaks
+    cfg = cfg or PatternConfig()
+    rsi = df[rsi_col].dropna()
+    rsi_arr = rsi.to_numpy()
+    n = len(rsi_arr)
+    trades = []
+    for p in detect_v(rsi, cfg):
+        if p.completed_idx is None:
+            continue
+        t1, t2 = p.anchors
+        floor = float(min(rsi_arr[t1], rsi_arr[t2]))
+        breach_idx = None
+        for i in range(t2 + 1, min(t2 + 200, n)):
+            if rsi_arr[i] < floor:
+                breach_idx = i
+                break
+        if breach_idx is None or breach_idx + 1 >= len(df):
+            continue
+        entry_idx = breach_idx + 1
+        entry_price = float(df["close"].iloc[entry_idx])
+        range_size, hi_idx, lo_idx = define_fib_range_short(df, t2, breach_idx)
+        if range_size <= 0:
+            continue
+        initial_stop = float(df["high"].iloc[hi_idx])
+        targets = compute_fib_targets(entry_price, range_size, "short")
+        t = FibTrade(direction="short", entry_idx=entry_idx, entry_price=entry_price,
+                     range_size=range_size, range_high_idx=hi_idx, range_low_idx=lo_idx,
+                     initial_stop=initial_stop, targets=targets)
+        t = simulate_fib_trade(df, t, max_bars=max_bars,
+                               trailing_after_target_idx=trailing_after_target_idx)
+        trades.append(t)
+    return trades
+
+
+def trade_stats(trades: list[FibTrade], spread_bps: float = 2.0) -> dict:
+    if not trades:
+        return {"n": 0}
+    rets = np.array([t.gross_return for t in trades if t.gross_return is not None])
+    r_mults = np.array([t.r_multiple for t in trades if t.r_multiple is not None])
+    spread = spread_bps / 10000.0
+    net = rets - spread
+    exit_reasons = pd.Series([t.exit_reason for t in trades]).value_counts()
+    return {
+        "n": len(trades),
+        "gross_mean_return_pct": float(rets.mean() * 100),
+        "net_mean_return_pct": float(net.mean() * 100),
+        "median_return_pct": float(np.median(rets) * 100),
+        "std_return_pct": float(rets.std() * 100),
+        "win_rate": float((net > 0).mean()),
+        "mean_R_multiple": float(r_mults.mean()) if len(r_mults) else None,
+        "median_R_multiple": float(np.median(r_mults)) if len(r_mults) else None,
+        "exit_reasons": exit_reasons.to_dict(),
+        "best_trade_pct": float(rets.max() * 100),
+        "worst_trade_pct": float(rets.min() * 100),
+    }
