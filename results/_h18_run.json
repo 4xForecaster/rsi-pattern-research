@@ -21,14 +21,14 @@
     "base_risk": 0.01
   },
   "train_window": [
-    "2026-01-21 00:40:00+00:00",
-    "2026-03-13 15:55:00+00:00",
-    10185
+    "2026-01-28 19:25:00+00:00",
+    "2026-03-20 15:55:00+00:00",
+    9980
   ],
   "test_window": [
-    "2026-03-15 17:00:00+00:00",
-    "2026-05-04 23:55:00+00:00",
-    9814
+    "2026-03-22 17:00:00+00:00",
+    "2026-05-12 17:05:00+00:00",
+    10019
   ],
   "min_train_trades": 10,
   "min_test_trades": 5,
@@ -38,417 +38,392 @@
       "value": "(20, 40, 80)",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.440971853354133,
-        "total_R_per_year": 600.4417141110345,
-        "sharpe": 5.387440497817702,
-        "sortino": 9.307793029413586,
-        "max_dd": -0.11558653899559901
+        "trades": 37,
+        "mean_R_weighted": 3.2606611790606252,
+        "total_R_per_year": 881.3078067824009,
+        "sharpe": 7.204447545061758,
+        "sortino": 12.97315407725836,
+        "max_dd": -0.11350478794385888
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.820650957253548,
-        "total_R_per_year": 498.7445716026438,
-        "sharpe": 5.061521166510745,
-        "sortino": 8.78837693099041,
-        "max_dd": -0.10125092122632962
+        "trades": 28,
+        "mean_R_weighted": 0.8614314109361331,
+        "total_R_per_year": 214.8746107230203,
+        "sharpe": 1.8064322921692626,
+        "sortino": 2.5639675669407285,
+        "max_dd": -0.13087363043645983
       },
-      "verdict": "HOLDS_UP",
-      "verdict_reason": "ratio 0.94 \u2265 0.66"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.20 < 0.33"
     },
     {
       "knob": "fld_cycles",
       "value": "(40, 80, 160)",
       "is_h14_default": true,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.6128077964416145,
-        "total_R_per_year": 642.7107259685689,
-        "sharpe": 4.948265688746626,
-        "sortino": 7.744636396472765,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.5445898251753114,
+        "total_R_per_year": 687.7644608975088,
+        "sharpe": 5.945743663801845,
+        "sortino": 9.659897082195203,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0029556829578585,
-        "total_R_per_year": 274.74717240026837,
-        "sharpe": 2.9478216957549517,
-        "sortino": 4.1656880542251065,
-        "max_dd": -0.10698490491174295
+        "trades": 28,
+        "mean_R_weighted": 0.7655115128156593,
+        "total_R_per_year": 190.9484449162378,
+        "sharpe": 1.632210063795105,
+        "sortino": 2.232280229807767,
+        "max_dd": -0.11624809055888008
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.54 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.23 < 0.33"
     },
     {
       "knob": "fld_cycles",
       "value": "(60, 120, 240)",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 3.237880652663454,
-        "total_R_per_year": 796.4690811574646,
-        "sharpe": 6.13374804178415,
-        "sortino": 10.145261178900943,
-        "max_dd": -0.12295746965614951
+        "trades": 37,
+        "mean_R_weighted": 3.8714247448771246,
+        "total_R_per_year": 1046.3880371691137,
+        "sharpe": 7.565217513514352,
+        "sortino": 13.125988348214849,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.777748454732639,
-        "total_R_per_year": 486.9919673183222,
-        "sharpe": 4.064323949064066,
-        "sortino": 6.2394955787313275,
-        "max_dd": -0.16398951676004503
+        "trades": 28,
+        "mean_R_weighted": 0.6383417675369776,
+        "total_R_per_year": 159.22734772196756,
+        "sharpe": 0.2549910678550258,
+        "sortino": 0.31217417529366276,
+        "max_dd": -0.21481277598682558
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.62 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.02 < 0.33"
     },
     {
       "knob": "range_lookback",
       "value": "80",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.1655001525383977,
-        "total_R_per_year": 532.6798921139479,
-        "sharpe": 0.8880244038515489,
-        "sortino": 1.450680793797551,
-        "max_dd": -0.4492279454281547
+        "trades": 37,
+        "mean_R_weighted": 2.806557693143528,
+        "total_R_per_year": 758.5704460912985,
+        "sharpe": 2.0187441294283124,
+        "sortino": 3.499590431282661,
+        "max_dd": -0.4353192239110458
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.7554185665077608,
-        "total_R_per_year": 480.87497356271956,
-        "sharpe": 5.018936995772258,
-        "sortino": 8.11469524848075,
-        "max_dd": -0.09637455349413737
+        "trades": 28,
+        "mean_R_weighted": 0.8891190760919064,
+        "total_R_per_year": 221.7809949071202,
+        "sharpe": 1.8593232238961566,
+        "sortino": 2.560103379816723,
+        "max_dd": -0.118635041341286
       },
       "verdict": "HOLDS_UP",
-      "verdict_reason": "ratio 5.59 \u2265 0.66"
+      "verdict_reason": "ratio 0.73 \u2265 0.66"
     },
     {
       "knob": "range_lookback",
       "value": "160",
       "is_h14_default": true,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.6128077964416145,
-        "total_R_per_year": 642.7107259685689,
-        "sharpe": 4.948265688746626,
-        "sortino": 7.744636396472765,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.5445898251753114,
+        "total_R_per_year": 687.7644608975088,
+        "sharpe": 5.945743663801845,
+        "sortino": 9.659897082195203,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0029556829578585,
-        "total_R_per_year": 274.74717240026837,
-        "sharpe": 2.9478216957549517,
-        "sortino": 4.1656880542251065,
-        "max_dd": -0.10698490491174295
+        "trades": 28,
+        "mean_R_weighted": 0.7655115128156593,
+        "total_R_per_year": 190.9484449162378,
+        "sharpe": 1.632210063795105,
+        "sortino": 2.232280229807767,
+        "max_dd": -0.11624809055888008
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.54 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.23 < 0.33"
     },
     {
       "knob": "range_lookback",
       "value": "320",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.238447321707331,
-        "total_R_per_year": 550.6237791912017,
-        "sharpe": 4.854067638920318,
-        "sortino": 7.499440826943595,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.2079971143818957,
+        "total_R_per_year": 596.7885000607106,
+        "sharpe": 6.121706819995272,
+        "sortino": 9.901409951609052,
+        "max_dd": -0.10459087364644104
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.7918910638506964,
-        "total_R_per_year": 216.92865830360012,
-        "sharpe": 2.5771986631261363,
-        "sortino": 3.5341782864602065,
-        "max_dd": -0.08566041562317173
+        "trades": 28,
+        "mean_R_weighted": 0.5076785902164237,
+        "total_R_per_year": 126.63485224739915,
+        "sharpe": 0.9562510278921791,
+        "sortino": 1.2229595942968219,
+        "max_dd": -0.09332964999395432
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.47 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.12 < 0.33"
     },
     {
       "knob": "trail_factor",
       "value": "3.0",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 0.07964050822205306,
-        "total_R_per_year": 19.590346035254303,
-        "sharpe": -1.335043821282745,
-        "sortino": -1.8988866700675548,
-        "max_dd": -0.11350494960409385
+        "trades": 37,
+        "mean_R_weighted": 0.22607709498742187,
+        "total_R_per_year": 61.10524761867533,
+        "sharpe": 0.09095219489622791,
+        "sortino": 0.13205834184925067,
+        "max_dd": -0.1352758237640863
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.11023610448535824,
-        "total_R_per_year": 30.19780287245782,
-        "sharpe": -1.0296508487227243,
-        "sortino": -1.3799280784483887,
-        "max_dd": -0.11915599243875308
+        "trades": 28,
+        "mean_R_weighted": 0.02063774819794017,
+        "total_R_per_year": 5.14785977610571,
+        "sharpe": -1.944706877209424,
+        "sortino": -2.481616243998762,
+        "max_dd": -0.12109292578313202
       },
-      "verdict": "INCONCLUSIVE",
-      "verdict_reason": "train Sortino -1.90 \u2264 0"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio -18.79 < 0.33"
     },
     {
       "knob": "trail_factor",
       "value": "3.6",
       "is_h14_default": true,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.6128077964416145,
-        "total_R_per_year": 642.7107259685689,
-        "sharpe": 4.948265688746626,
-        "sortino": 7.744636396472765,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.5445898251753114,
+        "total_R_per_year": 687.7644608975088,
+        "sharpe": 5.945743663801845,
+        "sortino": 9.659897082195203,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0029556829578585,
-        "total_R_per_year": 274.74717240026837,
-        "sharpe": 2.9478216957549517,
-        "sortino": 4.1656880542251065,
-        "max_dd": -0.10698490491174295
+        "trades": 28,
+        "mean_R_weighted": 0.7655115128156593,
+        "total_R_per_year": 190.9484449162378,
+        "sharpe": 1.632210063795105,
+        "sortino": 2.232280229807767,
+        "max_dd": -0.11624809055888008
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.54 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.23 < 0.33"
     },
     {
       "knob": "trail_factor",
       "value": "4.0",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 0.07964050822205306,
-        "total_R_per_year": 19.590346035254303,
-        "sharpe": -1.335043821282745,
-        "sortino": -1.8988866700675548,
-        "max_dd": -0.11350494960409385
+        "trades": 37,
+        "mean_R_weighted": 0.22607709498742187,
+        "total_R_per_year": 61.10524761867533,
+        "sharpe": 0.09095219489622791,
+        "sortino": 0.13205834184925067,
+        "max_dd": -0.1352758237640863
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.11023610448535824,
-        "total_R_per_year": 30.19780287245782,
-        "sharpe": -1.0296508487227243,
-        "sortino": -1.3799280784483887,
-        "max_dd": -0.11915599243875308
+        "trades": 28,
+        "mean_R_weighted": 0.02063774819794017,
+        "total_R_per_year": 5.14785977610571,
+        "sharpe": -1.944706877209424,
+        "sortino": -2.481616243998762,
+        "max_dd": -0.12109292578313202
       },
-      "verdict": "INCONCLUSIVE",
-      "verdict_reason": "train Sortino -1.90 \u2264 0"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio -18.79 < 0.33"
     },
     {
       "knob": "time_stop",
       "value": "80",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.1555985110967946,
-        "total_R_per_year": 530.2442398750497,
-        "sharpe": 4.734360350633738,
-        "sortino": 7.389378866864237,
-        "max_dd": -0.10407653239022052
+        "trades": 37,
+        "mean_R_weighted": 2.3658465822996435,
+        "total_R_per_year": 639.4528434968591,
+        "sharpe": 6.5745444212847195,
+        "sortino": 10.738041908551672,
+        "max_dd": -0.08838013323571126
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0768633919023274,
-        "total_R_per_year": 294.9932654192437,
-        "sharpe": 4.255014657930201,
-        "sortino": 6.411805220887374,
-        "max_dd": -0.11065925130515575
+        "trades": 28,
+        "mean_R_weighted": 0.6419647260255461,
+        "total_R_per_year": 160.13105495276244,
+        "sharpe": 1.2248147895055177,
+        "sortino": 1.7519971414837088,
+        "max_dd": -0.12646105971069888
       },
-      "verdict": "HOLDS_UP",
-      "verdict_reason": "ratio 0.87 \u2265 0.66"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.16 < 0.33"
     },
     {
       "knob": "time_stop",
       "value": "160",
       "is_h14_default": true,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.6128077964416145,
-        "total_R_per_year": 642.7107259685689,
-        "sharpe": 4.948265688746626,
-        "sortino": 7.744636396472765,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.5445898251753114,
+        "total_R_per_year": 687.7644608975088,
+        "sharpe": 5.945743663801845,
+        "sortino": 9.659897082195203,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0029556829578585,
-        "total_R_per_year": 274.74717240026837,
-        "sharpe": 2.9478216957549517,
-        "sortino": 4.1656880542251065,
-        "max_dd": -0.10698490491174295
+        "trades": 28,
+        "mean_R_weighted": 0.7655115128156593,
+        "total_R_per_year": 190.9484449162378,
+        "sharpe": 1.632210063795105,
+        "sortino": 2.232280229807767,
+        "max_dd": -0.11624809055888008
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.54 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.23 < 0.33"
     },
     {
       "knob": "time_stop",
       "value": "320",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.822589627613786,
-        "total_R_per_year": 694.3138454905279,
-        "sharpe": 5.11025085306202,
-        "sortino": 8.035778849200188,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.4916263983946543,
+        "total_R_per_year": 673.4492410900992,
+        "sharpe": 5.449283987601843,
+        "sortino": 8.589254884568177,
+        "max_dd": -0.12716101472563157
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.6025986275619568,
-        "total_R_per_year": 161.7054970165749,
-        "sharpe": 0.8006963524810028,
-        "sortino": 1.003899077697405,
-        "max_dd": -0.23900648962370785
+        "trades": 28,
+        "mean_R_weighted": 0.3771279377408067,
+        "total_R_per_year": 91.83065283988643,
+        "sharpe": 0.04136258938578192,
+        "sortino": 0.05480603349669363,
+        "max_dd": -0.25135498263508915
       },
       "verdict": "PAPER_FIT",
-      "verdict_reason": "ratio 0.12 < 0.33"
+      "verdict_reason": "ratio 0.01 < 0.33"
     },
     {
       "knob": "scheme",
       "value": "A (1.0, 1.0, 1.0)",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 1.1024620628971549,
-        "total_R_per_year": 271.18879305337,
-        "sharpe": 4.302258396503557,
-        "sortino": 6.681622615470512,
-        "max_dd": -0.06347603214396458
+        "trades": 37,
+        "mean_R_weighted": 1.2779282006120911,
+        "total_R_per_year": 345.40482370243905,
+        "sharpe": 5.558129623733736,
+        "sortino": 8.9327301979186,
+        "max_dd": -0.06586240846333924
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.7381634517022024,
-        "total_R_per_year": 202.21065055067206,
-        "sharpe": 2.439043480857267,
-        "sortino": 3.305580774101708,
-        "max_dd": -0.08759986074829718
+        "trades": 28,
+        "mean_R_weighted": 0.548322198065355,
+        "total_R_per_year": 136.77295413693622,
+        "sharpe": 1.119630471180447,
+        "sortino": 1.436077707913471,
+        "max_dd": -0.09353279230625688
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.49 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.16 < 0.33"
     },
     {
       "knob": "scheme",
       "value": "B (1.0, 1.0, 3.0)",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 1.8576349296693848,
-        "total_R_per_year": 456.94975951096967,
-        "sharpe": 4.910933748349121,
-        "sortino": 7.692356010636861,
-        "max_dd": -0.0916737013720631
+        "trades": 37,
+        "mean_R_weighted": 1.9112590128937013,
+        "total_R_per_year": 516.5846422999742,
+        "sharpe": 6.019810008383793,
+        "sortino": 9.772592568588909,
+        "max_dd": -0.08834609029728058
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.8705595673300306,
-        "total_R_per_year": 238.47891147547026,
-        "sharpe": 2.781928875370355,
-        "sortino": 3.850947993348384,
-        "max_dd": -0.0976980073859055
+        "trades": 28,
+        "mean_R_weighted": 0.6569168554405073,
+        "total_R_per_year": 163.860699526587,
+        "sharpe": 1.4318076517379152,
+        "sortino": 1.8953338280209486,
+        "max_dd": -0.10526647600221495
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.50 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.19 < 0.33"
     },
     {
       "knob": "scheme",
       "value": "C (1.0, 1.0, 5.0)",
       "is_h14_default": true,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 2.6128077964416145,
-        "total_R_per_year": 642.7107259685689,
-        "sharpe": 4.948265688746626,
-        "sortino": 7.744636396472765,
-        "max_dd": -0.1350584774865452
+        "trades": 37,
+        "mean_R_weighted": 2.5445898251753114,
+        "total_R_per_year": 687.7644608975088,
+        "sharpe": 5.945743663801845,
+        "sortino": 9.659897082195203,
+        "max_dd": -0.12964409608558813
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 1.0029556829578585,
-        "total_R_per_year": 274.74717240026837,
-        "sharpe": 2.9478216957549517,
-        "sortino": 4.1656880542251065,
-        "max_dd": -0.10698490491174295
+        "trades": 28,
+        "mean_R_weighted": 0.7655115128156593,
+        "total_R_per_year": 190.9484449162378,
+        "sharpe": 1.632210063795105,
+        "sortino": 2.232280229807767,
+        "max_dd": -0.11624809055888008
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.54 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.23 < 0.33"
     },
     {
       "knob": "scheme",
       "value": "D (0.0, 1.0, 3.0)",
       "is_h14_default": false,
       "train": {
-        "trades": 20,
-        "mean_R_weighted": 2.5054730960311886,
-        "total_R_per_year": 446.401974792874,
-        "sharpe": 4.33603981905575,
-        "sortino": 6.806329833389126,
-        "max_dd": -0.09174779350703322
+        "trades": 22,
+        "mean_R_weighted": 2.739486228870355,
+        "total_R_per_year": 440.2628318417547,
+        "sharpe": 5.7356343841413295,
+        "sortino": 9.474808424113968,
+        "max_dd": -0.09147482887737113
       },
       "test": {
-        "trades": 26,
-        "mean_R_weighted": 1.0467944722265146,
-        "total_R_per_year": 207.10174386456453,
-        "sharpe": 2.8082048736782075,
-        "sortino": 3.9071673738506316,
-        "max_dd": -0.1046187175033012
+        "trades": 20,
+        "mean_R_weighted": 0.7118904852811502,
+        "total_R_per_year": 126.83804865801956,
+        "sharpe": 1.1048606391608902,
+        "sortino": 1.454939541566213,
+        "max_dd": -0.11327666266189529
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.57 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.15 < 0.33"
     },
     {
       "knob": "scheme",
       "value": "E (0.5, 1.0, 3.0)",
       "is_h14_default": false,
       "train": {
-        "trades": 33,
-        "mean_R_weighted": 1.688051736359295,
-        "total_R_per_year": 415.23488961780964,
-        "sharpe": 4.664915080590648,
-        "sortino": 7.31551420436309,
-        "max_dd": -0.0916737013720631
+        "trades": 37,
+        "mean_R_weighted": 1.7700713582731724,
+        "total_R_per_year": 478.4237370708643,
+        "sharpe": 5.929224379489298,
+        "sortino": 9.713777261789568,
+        "max_dd": -0.08988324082671817
       },
       "test": {
-        "trades": 36,
-        "mean_R_weighted": 0.8132888986357011,
-        "total_R_per_year": 222.7903276700174,
-        "sharpe": 2.8088669401959323,
-        "sortino": 3.896959850245787,
-        "max_dd": -0.10010051371388351
+        "trades": 28,
+        "mean_R_weighted": 0.5827050296063785,
+        "total_R_per_year": 145.34937409230324,
+        "sharpe": 1.2819365833748402,
+        "sortino": 1.6914775399022686,
+        "max_dd": -0.10811909536285313
       },
-      "verdict": "PARTIAL_DECAY",
-      "verdict_reason": "ratio 0.53 \u2208 [0.33, 0.66)"
+      "verdict": "PAPER_FIT",
+      "verdict_reason": "ratio 0.17 < 0.33"
     }
   ],
-  "revisions": [
-    {
-      "knob": "fld_cycles",
-      "h14_value": "(40, 80, 160)",
-      "h14_test_sortino": 4.1656880542251065,
-      "winner_value": "(20, 40, 80)",
-      "winner_test_sortino": 8.78837693099041,
-      "margin": 4.622688876765303
-    },
-    {
-      "knob": "range_lookback",
-      "h14_value": "160",
-      "h14_test_sortino": 4.1656880542251065,
-      "winner_value": "80",
-      "winner_test_sortino": 8.11469524848075,
-      "margin": 3.9490071942556435
-    },
-    {
-      "knob": "time_stop",
-      "h14_value": "160",
-      "h14_test_sortino": 4.1656880542251065,
-      "winner_value": "80",
-      "winner_test_sortino": 6.411805220887374,
-      "margin": 2.246117166662268
-    }
-  ]
+  "revisions": []
 }

@@ -8,32 +8,40 @@ regime/confluence overlay. Calibration source: H14 Phases 1–2
 params: [`h14_intraday_spec_params.json`](h14_intraday_spec_params.json).
 Source-of-truth code: [`src/rsi_pattern/intraday.py`](../src/rsi_pattern/intraday.py).
 
-> ⚠️ **H17 + H18 walk-forward validation updates (2026-05-12)**
+> ⚠️ **H17 + H18 + H19 walk-forward validation updates (2026-05-12)**
 >
-> **H17 (strict-M thresholds):** H14's published full-window
-> Sortino +6.19 is optimistic by ~33%. A 50/50 walk-forward (train
-> Jan 21 → Mar 13, test Mar 15 → May 4) on the same H14 cycles
-> (40, 80, 160) shows the H14 thresholds (30, 72, 72) decay from
-> train Sortino **+7.74 → test Sortino +4.17** (ratio 0.54).
-> Threshold choice itself is NOT paper-fit — generalizes better
-> than a formally trained alternative. Thresholds stay; **expected
-> metric numbers are revised** (row 15b below). See
-> [`H17_walkforward_validation.md`](H17_walkforward_validation.md).
+> Honest OOS Sortino has been revised down twice as more rigor /
+> more data has been applied:
 >
-> **H18 (remaining knobs):** Walk-forward'd FLD cycles, range
-> lookback, trail factor, time stop, and scheme. Trail factor (3.6)
-> and scheme (C) are confirmed. Range lookback and time stop have
-> test-better alternatives that LOSE on train — regime-shift
-> artifacts, not robust revisions.
+> | Evaluation | Test slice | H14 baseline test Sortino |
+> |---|---|---:|
+> | H14 published (full window) | (calibration = evaluation) | +6.19 |
+> | H17 (50/50 split) | Mar 15 → May 4 | +4.17 |
+> | **H19 (shifted window)** | **Mar 22 → May 12** | **+2.23** |
 >
-> **One real revision candidate**: FLD cycles **(20, 40, 80)** wins
-> on BOTH train (+9.31) AND test (+8.79) vs H14's (40, 80, 160)
-> (train +7.74, test +4.17). The only candidate from H18 that
-> passes a both-slices filter. **NOT yet adopted** — cycle changes
-> cascade to lookback / time-stop / strict-M-thresholds and need a
-> coordinated re-validation on the next 52 days of 5m data before
-> the spec moves to v1.1. Until then, run H14 as published. See
-> [`H18_walkforward_remaining_knobs.md`](H18_walkforward_remaining_knobs.md).
+> The honest production-facing expected Sortino is **+2 to +4**,
+> regime-dependent. Use the lower end for capital allocation.
+>
+> **H18's revision candidate (20, 40, 80) FLD cycles was withdrawn
+> after H19.** That candidate won on both slices in H18 by a +4.62
+> test-Sortino margin. On the shifted window (8 new days appended,
+> 8 old days dropped) the margin collapsed to +0.33 — below the
+> +0.5 revision threshold. It was a regime-specific win, not a
+> robust improvement.
+>
+> **What stays:** H14 thresholds (30, 72, 72), FLD cycles
+> (40, 80, 160), range lookback 160, trail 3.6×, time stop 160,
+> Scheme C (1/1/5). All confirmed across both window evaluations.
+>
+> **What changed:** only the published expected-Sortino number
+> (row 15b below) and an explicit acknowledgement that single-window
+> calibration is fragile. Recommend bi-weekly re-validation as new
+> BarChart data lands; see H19 for the protocol.
+>
+> Full analyses:
+> [`H17_walkforward_validation.md`](H17_walkforward_validation.md),
+> [`H18_walkforward_remaining_knobs.md`](H18_walkforward_remaining_knobs.md),
+> [`H19_shifted_window_revalidation.md`](H19_shifted_window_revalidation.md).
 
 ## Primary spec — 5m DXY · Scheme C
 
@@ -54,7 +62,8 @@ Source-of-truth code: [`src/rsi_pattern/intraday.py`](../src/rsi_pattern/intrada
 | 13 | **Parallel positions** | Allowed. **Overlap-aware MTM is mandatory** — multiple positions are routine at 5m. No concurrency cap. Implementation: `risk_metrics.build_equity_curve_mtm`. Historical peak concurrent exposure under Scheme C ≈ 14× (driven by 5× bearish bursts). |
 | 14 | **Daily regime overlay** *(provisional — not yet enforced in code)* | Recommended: only take a 5m entry when daily FLD bias ≠ "bullish (all 3)" — i.e., the daily Scheme D filter agrees that we're not in a fully bullish daily regime. Pending Step 4 implementation. |
 | 15 | **Expected stats (5m, full window, 2026-01-21 → 2026-05-04, 104 days)** | 69 trades · Mean R (weighted) +1.77 · Total R/yr +442 · Sharpe +4.03 · Sortino +6.19 · Max DD −13.51%. **⚠ Optimistic — see H17 walk-forward below.** |
-| 15b | **H17 walk-forward expected stats (load-bearing for forward use)** | 36 test trades · Mean R **+1.00** · Sharpe **+2.95** · **Sortino +4.17** · Max DD **−10.70%**. This is the honest forward-looking expectation derived from the held-out 52-day test slice (2026-03-15 → 2026-05-04) using the same H14 thresholds (30, 72, 72). |
+| 15b | **H17 walk-forward expected stats (superseded by 15c)** | 36 test trades · Mean R +1.00 · Sharpe +2.95 · **Sortino +4.17** · Max DD −10.70%. Held-out 52-day test slice 2026-03-15 → 2026-05-04. |
+| 15c | **H19 shifted-window expected stats (load-bearing — current honest read)** | 28 test trades · Mean R **+0.77** · Sharpe **+1.63** · **Sortino +2.23** · Max DD **−11.62%**. Held-out 52-day test slice 2026-03-22 → 2026-05-12 with 8 days of bars that were never in any prior calibration. **Production expectation: Sortino +2 to +4 range, regime-dependent.** |
 
 ## Secondary spec — 15m DXY (caveated)
 
