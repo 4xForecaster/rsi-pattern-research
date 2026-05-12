@@ -1,41 +1,47 @@
 # H8 — SURF Fibonacci Position Management Backtest
 
-**Date:** 2026-05-12
+**Date:** 2026-05-12 (revised — trail activates near 3.600x per Dr. A clarification)
 
 Per Dr. A's specification:
 - Reference RANGE = price excursion between RSI pattern's high and subsequent low
 - Targets at **1.618x, 2.236x, and 3.618x** that range, projected in trade direction
-- **3-bar trailing stop** (low of last 3 higher-high bars, excluding inside bars) activates after first target hits
+- **3-bar trailing stop** (low of last 3 higher-high bars, excluding inside bars) activates **as price nears 3.618x — specifically at ~3.600x**
+- T1 and T2 are target markers but do NOT trigger stop adjustments. Initial stop holds through them.
 
 This replaces the "fixed 20-bar hold" with realistic stop-and-target management.
 
 ## Daily DXY results
 
-### LONG @ P1 of M
+### LONG @ P1 of M (trail activates near 3.600x)
 
 | Metric | Value |
 |---|---|
 | Trades | 124 |
-| Net mean return / trade | **+2.45%** |
-| Median return / trade | **+3.15%** |
-| Std deviation | 4.60% |
-| Win rate | 76% |
-| **Mean R-multiple** | **+1.13** |
-| Median R-multiple | +1.15 |
-| Best / worst single trade | +10.94% / -10.90% |
+| Net mean return / trade | **+2.19%** |
+| Median return / trade | +2.72% |
+| Std deviation | 5.35% |
+| Win rate | 65% |
+| **Mean R-multiple** | **+1.24** |
+| Median R-multiple | +0.66 |
+| Best / worst single trade | +15.58% / -10.90% |
 
 **Exit reason breakdown:**
 
 | Exit type | Count | Implication |
 |---|---|---|
-| trail_after_T1 | 41 | Hit T1, trailed up, exited on trail |
+| **T3 cleanly** | **32** | Full Fib extension captured (3.618x) |
 | time (no targets) | 34 | Held 200 bars, no target hit, exit at close |
-| stop (initial) | 21 | Loss — hit initial stop before T1 |
-| trail_after_T2 | 19 | Hit T1+T2, trailed up to T3 region, exited on trail |
-| T3 | 7 | Hit T3 cleanly — best outcome |
-| time (T1 hit) | 2 | T1 hit but rest never came |
+| initial_stop | 31 | Loss — hit initial stop |
+| time (T1,T2 hit) | 15 | Partial — T2 hit but stalled before 3.600x |
+| time (T1 only) | 12 | T1 hit, fizzled |
 
-**Read:** The strategy reaches at least T1 on **54% of trades** (67 of 124). T3 cleanly hits 7 times. The 21 stop-outs are 17% of trades, mean -7% per stop. This is REAL stop risk, not the 99% win rate the fixed-hold version implied.
+**Read:** The strategy reaches **T3 cleanly on 26% of trades** (32 of 124) — the big winners that justify the asymmetric payoff. **25% stop-outs** are the cost of letting trades run to the final approach without prematurely tightening. Mean R-multiple = **+1.24** despite the lower win rate — the T3 winners (best trade +15.6%) compensate.
+
+**Trade outcome distribution:**
+- 26% capture full T3 extension
+- 22% hit at least T1 but stall before 3.600x
+- 27% never reach T1, time out
+- 25% stop out
 
 ### SHORT @ V-floor breach
 

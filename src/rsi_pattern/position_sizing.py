@@ -167,37 +167,55 @@ def three_bar_trailing_stop_short(df: pd.DataFrame, start_idx: int, current_idx:
     return float(max(last3_highs))
 
 
+TRAIL_ACTIVATION_FACTOR = 3.600   # "as price nears 3.618x" — activate trail near final target
+
+
 def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                         max_bars: int = 200,
-                        trailing_after_target_idx: int = 1,
+                        trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,
                         close_col: str = "close", high_col: str = "high",
                         low_col: str = "low") -> FibTrade:
     """Walk forward bar-by-bar to find the exit.
 
+    Per Dr. A (2026-05-12 clarification): the 3-bar trailing stop activates
+    only as price NEARS T3 (at approximately the 3.600x range). T1 and T2 are
+    target markers but do NOT trigger a stop adjustment.
+
     Logic:
-    - Exit at initial_stop if price hits it before T1
-    - After hitting T1: keep position open targeting T2
-    - After T2: switch to 3-bar trailing stop until T3 or trail-out
-    - Hard cap: max_bars
+    - Initial stop holds throughout until either:
+      - Price hits initial_stop → exit at stop (loss)
+      - Price reaches trail_activation_factor (default 3.600x) range distance
+        from entry → activate the 3-bar trailing stop for the final approach
+      - Price reaches T3 cleanly → exit at T3
+    - Once trailing stop is active, update each bar; exit when triggered.
+    - Hard cap: max_bars (time exit at close).
     """
     n = len(df)
     end = min(trade.entry_idx + max_bars, n)
     targets_hit = []
     stop = trade.initial_stop
+    trail_active = False
+
+    # Precompute the trail activation threshold price
+    if trade.direction == "long":
+        trail_activation_price = trade.entry_price + trail_activation_factor * trade.range_size
+    else:
+        trail_activation_price = trade.entry_price - trail_activation_factor * trade.range_size
 
     for i in range(trade.entry_idx + 1, end):
         bar_high = float(df[high_col].iloc[i])
         bar_low = float(df[low_col].iloc[i])
-        close = float(df[close_col].iloc[i])
 
         if trade.direction == "long":
-            # Check stop hit
+            # 1. Stop hit?
             if bar_low <= stop:
                 trade.exit_idx = i
                 trade.exit_price = stop
-                trade.exit_reason = "stop" if not targets_hit else f"trail_after_{targets_hit[-1]}"
+                trade.exit_reason = "trail_stop" if trail_active else "initial_stop"
+                if trail_active and targets_hit:
+                    trade.exit_reason += f" (targets {','.join(targets_hit)})"
                 return trade
-            # Check targets
+            # 2. Target markers
             for t_idx, t_price in enumerate(trade.targets):
                 tname = f"T{t_idx + 1}"
                 if bar_high >= t_price and tname not in targets_hit:
@@ -207,8 +225,11 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                         trade.exit_price = t_price
                         trade.exit_reason = "T3"
                         return trade
-            # If T1+ hit and we've reached "trailing zone", update trailing stop
-            if len(targets_hit) >= trailing_after_target_idx:
+            # 3. Trail activation — once price approaches 3.600x range
+            if not trail_active and bar_high >= trail_activation_price:
+                trail_active = True
+            # 4. Update trailing stop if active
+            if trail_active:
                 trail = three_bar_trailing_stop_long(df, trade.entry_idx, i, low_col, high_col)
                 if trail > stop:
                     stop = trail
@@ -217,7 +238,9 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
             if bar_high >= stop:
                 trade.exit_idx = i
                 trade.exit_price = stop
-                trade.exit_reason = "stop" if not targets_hit else f"trail_after_{targets_hit[-1]}"
+                trade.exit_reason = "trail_stop" if trail_active else "initial_stop"
+                if trail_active and targets_hit:
+                    trade.exit_reason += f" (targets {','.join(targets_hit)})"
                 return trade
             for t_idx, t_price in enumerate(trade.targets):
                 tname = f"T{t_idx + 1}"
@@ -228,7 +251,9 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                         trade.exit_price = t_price
                         trade.exit_reason = "T3"
                         return trade
-            if len(targets_hit) >= trailing_after_target_idx:
+            if not trail_active and bar_low <= trail_activation_price:
+                trail_active = True
+            if trail_active:
                 trail = three_bar_trailing_stop_short(df, trade.entry_idx, i, low_col, high_col)
                 if trail < stop:
                     stop = trail
@@ -236,13 +261,13 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
     # Time exit
     trade.exit_idx = end - 1
     trade.exit_price = float(df[close_col].iloc[end - 1])
-    trade.exit_reason = f"time (targets hit: {','.join(targets_hit) or 'none'})"
+    trade.exit_reason = f"time (targets {','.join(targets_hit) or 'none'})"
     return trade
 
 
 def fib_long_at_p1(df: pd.DataFrame, rsi_col: str = "rsi14",
                     cfg: PatternConfig | None = None,
-                    trailing_after_target_idx: int = 1,
+                    trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,
                     max_bars: int = 200) -> list[FibTrade]:
     cfg = cfg or PatternConfig()
     rsi = df[rsi_col].dropna()
@@ -263,14 +288,14 @@ def fib_long_at_p1(df: pd.DataFrame, rsi_col: str = "rsi14",
                      range_size=range_size, range_high_idx=hi_idx, range_low_idx=lo_idx,
                      initial_stop=initial_stop, targets=targets)
         t = simulate_fib_trade(df, t, max_bars=max_bars,
-                               trailing_after_target_idx=trailing_after_target_idx)
+                               trail_activation_factor=trail_activation_factor)
         trades.append(t)
     return trades
 
 
 def fib_short_at_v_floor(df: pd.DataFrame, rsi_col: str = "rsi14",
                           cfg: PatternConfig | None = None,
-                          trailing_after_target_idx: int = 1,
+                          trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,
                           max_bars: int = 200) -> list[FibTrade]:
     from scipy.signal import find_peaks
     cfg = cfg or PatternConfig()
@@ -301,7 +326,7 @@ def fib_short_at_v_floor(df: pd.DataFrame, rsi_col: str = "rsi14",
                      range_size=range_size, range_high_idx=hi_idx, range_low_idx=lo_idx,
                      initial_stop=initial_stop, targets=targets)
         t = simulate_fib_trade(df, t, max_bars=max_bars,
-                               trailing_after_target_idx=trailing_after_target_idx)
+                               trail_activation_factor=trail_activation_factor)
         trades.append(t)
     return trades
 
