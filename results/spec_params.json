@@ -1,0 +1,113 @@
+{
+  "spec_name": "RSI_M_P1_LONG",
+  "version": "1.0",
+  "spec_date": "2026-05-12",
+  "instrument": {
+    "symbol": "DXY",
+    "timeframe": "daily",
+    "data_source": "BarChart Premier CSV",
+    "validated_only_on_this_instrument": true
+  },
+  "indicator": {
+    "name": "RSI",
+    "period": 14,
+    "smoothing": "Wilder (RMA, alpha=1/period, EMA adjust=False)",
+    "column": "rsi14"
+  },
+  "pattern_detector": {
+    "type": "loose_M",
+    "source_function": "rsi_pattern.patterns.detect_m",
+    "m_peak_threshold": 65.0,
+    "m_inner_threshold": 50.0,
+    "m_completion_threshold": 50.0,
+    "max_span_bars": 30,
+    "max_completion_bars": 30,
+    "min_peak_prominence": 3.0,
+    "min_peak_distance_bars": 3
+  },
+  "entry": {
+    "direction": "long",
+    "anchor_bar": "P1+1",
+    "trigger": "close_of_anchor_bar",
+    "requires_completion_before_entry": false
+  },
+  "reference_range": {
+    "high_anchor": "high(P1_bar)",
+    "low_anchor": "min(low) over [P1-60, P1)",
+    "lookback_bars": 60,
+    "formula": "range = high(P1) - low(pre_P1_60bar_floor)"
+  },
+  "initial_stop": {
+    "formula": "low(bar_of_pre_P1_60bar_floor)",
+    "atr_component": false
+  },
+  "targets": {
+    "fib_multiples": [1.618, 2.236, 3.618],
+    "labels": ["T1", "T2", "T3"],
+    "T1_T2_adjust_stop": false,
+    "T3_action": "exit_at_T3_price"
+  },
+  "trail": {
+    "activation_factor": 3.600,
+    "activation_rule": "bar_high >= entry + 3.600 * range",
+    "rule": "min(low) over last 3 higher-high bars since entry, excluding inside bars",
+    "inside_bar_definition": "high < prev_high AND low > prev_low",
+    "monotonic_upward_only": true
+  },
+  "exit": {
+    "priority_order": ["stop_hit", "T3_hit", "time_stop"],
+    "time_stop_bars": 200
+  },
+  "fld": {
+    "source_function": "rsi_pattern.fld.fld_bias",
+    "cycles_bars": [10, 20, 40],
+    "source": "(high + low) / 2",
+    "shift_formula": "period // 2 + 1",
+    "bias_rule": {
+      "bullish": "close > FLD for all cycles",
+      "bearish": "close < FLD for all cycles",
+      "neutral": "mixed"
+    },
+    "implementation_note": "canonical Hurst simplified; real Sentient FLD pending Step 5"
+  },
+  "position_sizing": {
+    "scheme": "D",
+    "scheme_label": "Skip bullish + 3x bearish",
+    "base_risk_fraction": 0.01,
+    "multipliers": {
+      "bullish": 0.0,
+      "neutral": 1.0,
+      "bearish": 3.0
+    },
+    "units_formula": "mult * base_risk * equity / (entry_close - initial_stop)",
+    "parallel_positions_allowed": true,
+    "concurrency_cap": null,
+    "historical_peak_exposure_x": 8
+  },
+  "expected_stats_scheme_D": {
+    "in_sample_window": "1990-01-02 to 2026-05-04",
+    "trades": 56,
+    "mean_R": 4.15,
+    "win_rate": 0.68,
+    "total_R_per_year": 6.78,
+    "sharpe_daily_annualized": 0.47,
+    "sortino_daily_annualized": 5.75,
+    "mar_full_sample": 1.29,
+    "calmar_trailing_3y": -0.27,
+    "max_dd_equity_fraction": -0.0278
+  },
+  "caveats": [
+    "Trailing 3-year Calmar negative across all schemes — current regime is cool",
+    "No cross-symbol validation",
+    "FLD is simplified canonical form; real Sentient FLD swap is Step 5",
+    "Initial stop has no volatility floor"
+  ],
+  "source_of_truth": {
+    "detector": "src/rsi_pattern/patterns.py::detect_m",
+    "trade_engine": "src/rsi_pattern/position_sizing.py::fib_long_at_p1",
+    "trade_sim": "src/rsi_pattern/position_sizing.py::simulate_fib_trade",
+    "fld": "src/rsi_pattern/fld.py::fld_bias",
+    "risk_metrics": "src/rsi_pattern/risk_metrics.py",
+    "backtest_runner": "scripts/h12_risk_adjusted_backtest.py"
+  }
+}
