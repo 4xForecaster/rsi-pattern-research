@@ -1,0 +1,590 @@
+{
+  "seed": 4242,
+  "is_fraction": 0.7,
+  "scheme_d": [
+    0.0,
+    1.0,
+    3.0
+  ],
+  "params": {
+    "detector": "loose_M",
+    "dip": 50.0,
+    "fld_cycles": [
+      10,
+      20,
+      40
+    ]
+  },
+  "yf_end": "2026-05-19",
+  "skipped": {},
+  "symbols": {
+    "DXY": {
+      "data_first": "1990-01-02",
+      "data_last": "2026-05-04",
+      "data_bars": 9304,
+      "is_window": [
+        "1990-01-02",
+        "2015-07-22",
+        6512
+      ],
+      "oos_window": [
+        "2015-07-23",
+        "2026-05-04",
+        2792
+      ],
+      "full": {
+        "label": "DXY FULL",
+        "trades": 56,
+        "universe": 124,
+        "bias_counts": {
+          "bullish": 68,
+          "neutral": 40,
+          "bearish": 16,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.1468608494603165,
+        "total_R_per_year": 6.781793540806054,
+        "sharpe": 0.4664841294680146,
+        "sortino": 5.752691752959003,
+        "calmar": -0.2740922474537765,
+        "mar": 1.2853685253141864,
+        "max_dd": -0.027762480840506032
+      },
+      "is": {
+        "label": "DXY IS",
+        "trades": 37,
+        "universe": 87,
+        "bias_counts": {
+          "bullish": 50,
+          "neutral": 26,
+          "bearish": 11,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.076550885136851,
+        "total_R_per_year": 8.007210294054701,
+        "sharpe": 0.5153028142836994,
+        "sortino": 12.640179651911305,
+        "calmar": 1.3758792641263446,
+        "mar": 3.0624315576855463,
+        "max_dd": -0.015053173898272987
+      },
+      "oos": {
+        "label": "DXY OOS",
+        "trades": 19,
+        "universe": 37,
+        "bias_counts": {
+          "bullish": 18,
+          "neutral": 14,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.319237975651238,
+        "total_R_per_year": 4.166433275051948,
+        "sharpe": 0.36082841995815124,
+        "sortino": 1.3437362840697376,
+        "calmar": -0.27580809012052304,
+        "mar": 0.43903846062163543,
+        "max_dd": -0.07999999999999996
+      },
+      "disloc": null,
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino +1.34 in [1.0, 3.0) or trade-count short (full=56, OOS=19) \u2014 sweep before deciding"
+    },
+    "EURUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5827,
+      "is_window": [
+        "2003-12-01",
+        "2019-08-27",
+        4078
+      ],
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "full": {
+        "label": "EURUSD FULL",
+        "trades": 30,
+        "universe": 66,
+        "bias_counts": {
+          "bullish": 36,
+          "neutral": 24,
+          "bearish": 6,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.1532108028433474,
+        "total_R_per_year": 3.4453573849526844,
+        "sharpe": 0.3857847399894553,
+        "sortino": 3.146825237622802,
+        "calmar": 0.9763156510770629,
+        "mar": 0.9980628462701528,
+        "max_dd": -0.026987725607489743
+      },
+      "is": {
+        "label": "EURUSD IS",
+        "trades": 18,
+        "universe": 41,
+        "bias_counts": {
+          "bullish": 23,
+          "neutral": 14,
+          "bearish": 4,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.4564182213304484,
+        "total_R_per_year": 4.034404595587567,
+        "sharpe": 0.3978637721722096,
+        "sortino": 3.2681978155711766,
+        "calmar": 0.3035492623262356,
+        "mar": 1.2588055578923532,
+        "max_dd": -0.026987725607489743
+      },
+      "oos": {
+        "label": "EURUSD OOS",
+        "trades": 12,
+        "universe": 25,
+        "bias_counts": {
+          "bullish": 13,
+          "neutral": 10,
+          "bearish": 2,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.698399675112696,
+        "total_R_per_year": 3.1623134137718547,
+        "sharpe": 0.5017595362794275,
+        "sortino": 4.064699715157458,
+        "calmar": 0.9881223671612749,
+        "mar": 1.7791186128657979,
+        "max_dd": -0.016412080897643344
+      },
+      "disloc": null,
+      "decision": "GO",
+      "decision_reason": "OOS Sortino +4.06 >= 3.0 AND full trades 30 >= 30 (OOS trades=12, OOS MaxDD=-1.6%)"
+    },
+    "GBPUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5839,
+      "is_window": [
+        "2003-12-01",
+        "2019-08-22",
+        4087
+      ],
+      "oos_window": [
+        "2019-08-23",
+        "2026-05-18",
+        1752
+      ],
+      "full": {
+        "label": "GBPUSD FULL",
+        "trades": 34,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 26,
+          "neutral": 22,
+          "bearish": 11,
+          "unknown": 1
+        },
+        "mean_R_weighted": 3.9600402287800818,
+        "total_R_per_year": 6.1067626451143,
+        "sharpe": 0.44017426853272856,
+        "sortino": 4.907087763333494,
+        "calmar": 8.518224894404034,
+        "mar": 0.7832233922513606,
+        "max_dd": -0.05035771137520928
+      },
+      "is": {
+        "label": "GBPUSD IS",
+        "trades": 25,
+        "universe": 38,
+        "bias_counts": {
+          "bullish": 13,
+          "neutral": 14,
+          "bearish": 10,
+          "unknown": 1
+        },
+        "mean_R_weighted": 4.4210217806459955,
+        "total_R_per_year": 7.843298063828201,
+        "sharpe": 0.4913739648878513,
+        "sortino": 5.50580584136835,
+        "calmar": 2.0407376151242724,
+        "mar": 1.0772583261548985,
+        "max_dd": -0.05035771137520928
+      },
+      "oos": {
+        "label": "GBPUSD OOS",
+        "trades": 9,
+        "universe": 22,
+        "bias_counts": {
+          "bullish": 13,
+          "neutral": 8,
+          "bearish": 1,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.679535918041434,
+        "total_R_per_year": 3.927019369853635,
+        "sharpe": 0.589362285761495,
+        "sortino": 5.566381949824333,
+        "calmar": 8.680171103321554,
+        "mar": 3.5806920820274004,
+        "max_dd": -0.010000000000000009
+      },
+      "disloc": {
+        "label": "GBPUSD excl-[2016]",
+        "trades": 34,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 26,
+          "neutral": 22,
+          "bearish": 11,
+          "unknown": 1
+        },
+        "mean_R_weighted": 3.9600402287800818,
+        "total_R_per_year": 6.1067626451143,
+        "sharpe": 0.44017426853272856,
+        "sortino": 4.907087763333494,
+        "calmar": 8.518224894404034,
+        "mar": 0.7832233922513606,
+        "max_dd": -0.05035771137520928,
+        "excluded_years": [
+          2016
+        ]
+      },
+      "decision": "GO",
+      "decision_reason": "OOS Sortino +5.57 >= 3.0 AND full trades 34 >= 30 (OOS trades=9, OOS MaxDD=-1.0%)"
+    },
+    "USDJPY": {
+      "data_first": "1996-10-30",
+      "data_last": "2026-05-18",
+      "data_bars": 7661,
+      "is_window": [
+        "1996-10-30",
+        "2017-07-14",
+        5362
+      ],
+      "oos_window": [
+        "2017-07-17",
+        "2026-05-18",
+        2299
+      ],
+      "full": {
+        "label": "USDJPY FULL",
+        "trades": 47,
+        "universe": 115,
+        "bias_counts": {
+          "bullish": 68,
+          "neutral": 34,
+          "bearish": 13,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.640116549467296,
+        "total_R_per_year": 2.7005055414893246,
+        "sharpe": 0.381064278803606,
+        "sortino": 1.3368513116921843,
+        "calmar": 0.902434607168054,
+        "mar": 0.20163342594562877,
+        "max_dd": -0.10028872329536365
+      },
+      "is": {
+        "label": "USDJPY IS",
+        "trades": 30,
+        "universe": 75,
+        "bias_counts": {
+          "bullish": 45,
+          "neutral": 20,
+          "bearish": 10,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.909988158211029,
+        "total_R_per_year": 2.9083789943854015,
+        "sharpe": 0.3785555854256062,
+        "sortino": 1.3728346211786586,
+        "calmar": 2.5846962710130823,
+        "mar": 0.2319158973889397,
+        "max_dd": -0.10028872329536365
+      },
+      "oos": {
+        "label": "USDJPY OOS",
+        "trades": 16,
+        "universe": 39,
+        "bias_counts": {
+          "bullish": 23,
+          "neutral": 13,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.343898690293877,
+        "total_R_per_year": 2.7241567624271306,
+        "sharpe": 0.6312875624463326,
+        "sortino": 1.6360339413819174,
+        "calmar": 0.900767365314336,
+        "mar": 0.8327244740627582,
+        "max_dd": -0.030000000000000027
+      },
+      "disloc": {
+        "label": "USDJPY excl-[2003, 2004, 2011, 2022, 2024]",
+        "trades": 41,
+        "universe": 97,
+        "bias_counts": {
+          "bullish": 56,
+          "neutral": 32,
+          "bearish": 9,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.04484205471271,
+        "total_R_per_year": 2.9370823882444372,
+        "sharpe": 0.40621773625209534,
+        "sortino": 1.7540872659100202,
+        "calmar": 6.931675173098954,
+        "mar": 0.429959660999514,
+        "max_dd": -0.05014436164768188,
+        "excluded_years": [
+          2003,
+          2004,
+          2011,
+          2022,
+          2024
+        ]
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino +1.64 in [1.0, 3.0) or trade-count short (full=47, OOS=16) \u2014 sweep before deciding"
+    },
+    "USDCAD": {
+      "data_first": "2003-09-17",
+      "data_last": "2026-05-18",
+      "data_bars": 5895,
+      "is_window": [
+        "2003-09-17",
+        "2019-07-30",
+        4126
+      ],
+      "oos_window": [
+        "2019-07-31",
+        "2026-05-18",
+        1769
+      ],
+      "full": {
+        "label": "USDCAD FULL",
+        "trades": 35,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 25,
+          "neutral": 26,
+          "bearish": 9,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.537861026284386,
+        "total_R_per_year": 7.178676017171518,
+        "sharpe": 0.5184250546719599,
+        "sortino": 4.358598140638708,
+        "calmar": 1.4658973964223216,
+        "mar": 0.7320040478585618,
+        "max_dd": -0.06000000000000005
+      },
+      "is": {
+        "label": "USDCAD IS",
+        "trades": 21,
+        "universe": 37,
+        "bias_counts": {
+          "bullish": 16,
+          "neutral": 14,
+          "bearish": 7,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.558284049287361,
+        "total_R_per_year": 7.617192822770482,
+        "sharpe": 0.5341116629697463,
+        "sortino": 4.883080239134619,
+        "calmar": 57.226688300612224,
+        "mar": 0.8628290657564978,
+        "max_dd": -0.06000000000000005
+      },
+      "oos": {
+        "label": "USDCAD OOS",
+        "trades": 15,
+        "universe": 24,
+        "bias_counts": {
+          "bullish": 9,
+          "neutral": 12,
+          "bearish": 2,
+          "unknown": 1
+        },
+        "mean_R_weighted": 2.7247067762123223,
+        "total_R_per_year": 6.041273674695775,
+        "sharpe": 0.5700717011380775,
+        "sortino": 3.115766089693188,
+        "calmar": 1.5722116066820018,
+        "mar": 1.3249402439584637,
+        "max_dd": -0.03921431158538047
+      },
+      "disloc": null,
+      "decision": "GO",
+      "decision_reason": "OOS Sortino +3.12 >= 3.0 AND full trades 35 >= 30 (OOS trades=15, OOS MaxDD=-3.9%)"
+    },
+    "AUDUSD": {
+      "data_first": "2006-05-16",
+      "data_last": "2026-05-18",
+      "data_bars": 5203,
+      "is_window": [
+        "2006-05-16",
+        "2020-05-15",
+        3642
+      ],
+      "oos_window": [
+        "2020-05-18",
+        "2026-05-18",
+        1561
+      ],
+      "full": {
+        "label": "AUDUSD FULL",
+        "trades": 33,
+        "universe": 69,
+        "bias_counts": {
+          "bullish": 36,
+          "neutral": 26,
+          "bearish": 7,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.9037239905946257,
+        "total_R_per_year": 3.20565258307274,
+        "sharpe": 0.5048041671331751,
+        "sortino": 2.206110477722603,
+        "calmar": 6.466244168847291,
+        "mar": 0.6122984746051563,
+        "max_dd": -0.04113546415548941
+      },
+      "is": {
+        "label": "AUDUSD IS",
+        "trades": 24,
+        "universe": 49,
+        "bias_counts": {
+          "bullish": 25,
+          "neutral": 19,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.88259460855745,
+        "total_R_per_year": 3.391455885453064,
+        "sharpe": 0.5626082248065246,
+        "sortino": 2.421347910875825,
+        "calmar": 0.584074348520655,
+        "mar": 0.6899086901773712,
+        "max_dd": -0.04113546415548941
+      },
+      "oos": {
+        "label": "AUDUSD OOS",
+        "trades": 9,
+        "universe": 20,
+        "bias_counts": {
+          "bullish": 11,
+          "neutral": 7,
+          "bearish": 2,
+          "unknown": 0
+        },
+        "mean_R_weighted": 2.0359512015465886,
+        "total_R_per_year": 3.1245007410289554,
+        "sharpe": 0.4069545427602179,
+        "sortino": 1.8504270357897026,
+        "calmar": 6.456757472570453,
+        "mar": 0.6313700221150128,
+        "max_dd": -0.04609924305362045
+      },
+      "disloc": {
+        "label": "AUDUSD excl-[2008]",
+        "trades": 33,
+        "universe": 69,
+        "bias_counts": {
+          "bullish": 36,
+          "neutral": 26,
+          "bearish": 7,
+          "unknown": 0
+        },
+        "mean_R_weighted": 1.5172146270166422,
+        "total_R_per_year": 2.5548152002079263,
+        "sharpe": 0.408929472462557,
+        "sortino": 1.3294033916753194,
+        "calmar": 6.463924196910726,
+        "mar": 0.45463304972487956,
+        "max_dd": -0.04603437688248457,
+        "excluded_years": [
+          2008
+        ]
+      },
+      "decision": "SWEEP",
+      "decision_reason": "OOS Sortino +1.85 in [1.0, 3.0) or trade-count short (full=33, OOS=9) \u2014 sweep before deciding"
+    },
+    "NZDUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5828,
+      "is_window": [
+        "2003-12-01",
+        "2019-08-27",
+        4079
+      ],
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "full": {
+        "label": "NZDUSD FULL",
+        "trades": 35,
+        "universe": 78,
+        "bias_counts": {
+          "bullish": 43,
+          "neutral": 21,
+          "bearish": 14,
+          "unknown": 0
+        },
+        "mean_R_weighted": 5.4425944985527,
+        "total_R_per_year": 8.985763582703484,
+        "sharpe": 0.4091173529216539,
+        "sortino": 4.417131693652835,
+        "calmar": 4.595405719603802,
+        "mar": 1.056277760678913,
+        "max_dd": -0.048841930736089
+      },
+      "is": {
+        "label": "NZDUSD IS",
+        "trades": 31,
+        "universe": 63,
+        "bias_counts": {
+          "bullish": 32,
+          "neutral": 20,
+          "bearish": 11,
+          "unknown": 0
+        },
+        "mean_R_weighted": 4.686130664727542,
+        "total_R_per_year": 9.76802024743074,
+        "sharpe": 0.45065011431888236,
+        "sortino": 4.703032672675855,
+        "calmar": 3.426998440649901,
+        "mar": 1.2731737889284966,
+        "max_dd": -0.048841930736089
+      },
+      "oos": {
+        "label": "NZDUSD OOS",
+        "trades": 4,
+        "universe": 15,
+        "bias_counts": {
+          "bullish": 11,
+          "neutral": 1,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "mean_R_weighted": 11.305189210697673,
+        "total_R_per_year": 10.91664338190965,
+        "sharpe": 0.36407324451358114,
+        "sortino": 5.338277832759654,
+        "calmar": 5.375187820244161,
+        "mar": 3.1415352747236622,
+        "max_dd": -0.030000000000000027
+      },
+      "disloc": null,
+      "decision": "GO",
+      "decision_reason": "OOS Sortino +5.34 >= 3.0 AND full trades 35 >= 30 (OOS trades=4, OOS MaxDD=-3.0%)"
+    }
+  }
+}
