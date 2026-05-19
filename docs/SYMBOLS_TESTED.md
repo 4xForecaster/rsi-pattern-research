@@ -28,6 +28,10 @@ Scheme D, no re-tune); directional quadrant in the last column.
 | USDJPY | fx_major | SWEEP | +1.64 | 16 | +1.34 | 47 | H23 | no | SWEEP (OOS +2.44) | NEITHER |
 | USDSEK | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
 | USDZAR | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
+| BTCUSD | crypto | NO-GO (H26) | +0.65 | 5 | +8.30 | 26 | H26 | no | NOT RUN | — |
+| ETHUSD | crypto | NO-GO¹ (H26, trade-count only) | **+12.55** | 7 | +19.63 | 25 | H26 | no | NOT RUN | — |
+| SOLUSD | crypto | NO-GO (H26, data-constrained) | −0.45 | 4 | +4.11 | 13 | H26 | no | NOT RUN | — |
+| BNBUSD / XRPUSD | crypto | NOT RUN (bonus gated on BTC/ETH GO) | — | — | — | — | H26 | no | NOT RUN | — |
 
 † DXY shipped on the H15 full-sample decision and a 7-year OOS window
 (+5.38). Under the *stricter* H23 70/30 split DXY itself is only SWEEP
@@ -48,6 +52,25 @@ caught NZDUSD M-LONG, confirming the gate generalizes across directions.
 **No hurst-agent integration** (0 GO ⇒ no `v_short_symbols:` block, no
 `v_short.py`, no schema bump). `strategies_vshort.py` kept as a faithful
 unit-tested research asset. Detail: results/H25_vshort_expansion.md.
+
+## Crypto (H26, 2026-05-19) — 0 GO, signal-scarcity not edge-failure
+
+¹ Daily M-P1 LONG, DXY params unchanged, on BTC/ETH/SOL (yfinance,
+7-day/wk ~365 bars/yr). Data clean as fetched (0 NaN/dup, monotonic, no
+>50% single-bar moves; nothing excluded). **0 GO** under the H26 brief's
+OOS-trade STRICT rule — and robust to PRAGMATIC too (no crypto major
+reaches 30 *full* trades: BTC 26, ETH 25, SOL 13). Key nuance: **ETHUSD
+OOS Sortino +12.55 — the highest OOS Sortino in the whole H12–H26
+program — but NO-GO purely on the 7<10 OOS-trade floor**, with NO IS→OOS
+degradation (IS +31.74, FULL +19.63). The M-P1 *edge* appears to transfer
+to crypto (possibly better than to FX); the FX-calibrated **cycle
+geometry** does not — BTC 2014-2020 cycle recon shows dominant periods
+~5–8 & ~20 bars, the 40-bar parent absent, so loose-M + FLD(10,20,40)
+under-samples crypto and never reaches the trade-count floors. No
+hurst-agent integration (0 GO). Actionable next step: **H27 — crypto-
+native cycle re-recon + ladder (e.g. 5/10/20 or 8/16/32)** as a fresh
+calibrated experiment, then re-test at the locked floors. Detail:
+results/H26_crypto_expansion.md.
 
 ## Per-symbol notes
 

@@ -1,0 +1,298 @@
+{
+  "seed": 42,
+  "is_fraction": 0.7,
+  "scheme_d": [
+    0.0,
+    1.0,
+    3.0
+  ],
+  "decision_rule": "OOS-trade STRICT (H26 brief)",
+  "cycle_recon": {
+    "window": "2014-01..2019-12 BTC daily log-returns",
+    "dominant_periods_bars_top8_in_4_160": [
+      5.3,
+      5.4,
+      5.8,
+      6.2,
+      6.3,
+      8.3,
+      20.3,
+      20.8
+    ],
+    "canonical_fx_cycles": [
+      10,
+      20,
+      40
+    ],
+    "flag": "crypto short-cycle energy (~5-8 & ~20 bars) differs from FX 10/20/40; 40-bar parent largely absent \u2014 candidate H27 cycle re-recon (e.g. 5/10/20 or 8/16/32). NOT tuned here."
+  },
+  "hygiene": {
+    "BTCUSD": {
+      "rows_raw": 4262,
+      "rows_clean": 4262,
+      "nan_rows_dropped": 0,
+      "dup_rows_dropped": 0,
+      "monotonic": true,
+      "n_single_bar_moves_gt_50pct": 0,
+      "spike_dates": [],
+      "max_day_gap": 1,
+      "n_day_gaps_gt_1": 0,
+      "first": "2014-09-17",
+      "last": "2026-05-18",
+      "bars_per_year_est": 365.3,
+      "data_ok": true,
+      "cleaning_applied": [
+        "none \u2014 data clean as fetched"
+      ],
+      "spikes_note": "no >50% single-bar moves"
+    },
+    "ETHUSD": {
+      "rows_raw": 3113,
+      "rows_clean": 3113,
+      "nan_rows_dropped": 0,
+      "dup_rows_dropped": 0,
+      "monotonic": true,
+      "n_single_bar_moves_gt_50pct": 0,
+      "spike_dates": [],
+      "max_day_gap": 1,
+      "n_day_gaps_gt_1": 0,
+      "first": "2017-11-09",
+      "last": "2026-05-18",
+      "bars_per_year_est": 365.4,
+      "data_ok": true,
+      "cleaning_applied": [
+        "none \u2014 data clean as fetched"
+      ],
+      "spikes_note": "no >50% single-bar moves"
+    },
+    "SOLUSD": {
+      "rows_raw": 2230,
+      "rows_clean": 2230,
+      "nan_rows_dropped": 0,
+      "dup_rows_dropped": 0,
+      "monotonic": true,
+      "n_single_bar_moves_gt_50pct": 0,
+      "spike_dates": [],
+      "max_day_gap": 1,
+      "n_day_gaps_gt_1": 0,
+      "first": "2020-04-10",
+      "last": "2026-05-18",
+      "bars_per_year_est": 365.4,
+      "data_ok": true,
+      "cleaning_applied": [
+        "none \u2014 data clean as fetched"
+      ],
+      "spikes_note": "no >50% single-bar moves"
+    }
+  },
+  "skipped": {},
+  "fx_reference": {
+    "DXY": {
+      "oos_sortino": 1.3437362840697376,
+      "decision": "SWEEP"
+    },
+    "EURUSD": {
+      "oos_sortino": 4.064699715157458,
+      "decision": "GO"
+    },
+    "GBPUSD": {
+      "oos_sortino": 5.566381949824333,
+      "decision": "GO"
+    },
+    "USDJPY": {
+      "oos_sortino": 1.6360339413819174,
+      "decision": "SWEEP"
+    },
+    "USDCAD": {
+      "oos_sortino": 3.115766089693188,
+      "decision": "GO"
+    },
+    "AUDUSD": {
+      "oos_sortino": 1.8504270357897026,
+      "decision": "SWEEP"
+    },
+    "NZDUSD": {
+      "oos_sortino": 5.338277832759654,
+      "decision": "GO"
+    }
+  },
+  "pairs": {
+    "BTCUSD": {
+      "symbol": "BTCUSD",
+      "data_first": "2014-09-17",
+      "data_last": "2026-05-18",
+      "data_bars": 4262,
+      "oos_window": [
+        "2022-11-17",
+        "2026-05-18",
+        1279
+      ],
+      "is": {
+        "label": "BTCUSD IS",
+        "trades": 21,
+        "universe": 53,
+        "bias_counts": {
+          "bullish": 32,
+          "neutral": 16,
+          "bearish": 5,
+          "unknown": 0
+        },
+        "sortino": 29.86038035206138,
+        "sharpe": 1.0298910893911641,
+        "total_R_per_year": 15.014935083019884,
+        "max_dd": -0.007030091261336913
+      },
+      "oos": {
+        "label": "BTCUSD OOS",
+        "trades": 5,
+        "universe": 24,
+        "bias_counts": {
+          "bullish": 19,
+          "neutral": 2,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "sortino": 0.6482952864196675,
+        "sharpe": 0.22232256700331418,
+        "total_R_per_year": 1.5505982732951304,
+        "max_dd": -0.06312259012455357
+      },
+      "full": {
+        "label": "BTCUSD FULL",
+        "trades": 26,
+        "universe": 77,
+        "bias_counts": {
+          "bullish": 51,
+          "neutral": 18,
+          "bearish": 8,
+          "unknown": 0
+        },
+        "sortino": 8.29585948069787,
+        "sharpe": 0.7961987475330771,
+        "total_R_per_year": 9.371382890968913,
+        "max_dd": -0.03316969639382494
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino +0.65<1.0 OR OOS trades 5<10",
+      "robustness": null
+    },
+    "ETHUSD": {
+      "symbol": "ETHUSD",
+      "data_first": "2017-11-09",
+      "data_last": "2026-05-18",
+      "data_bars": 3113,
+      "oos_window": [
+        "2023-10-28",
+        "2026-05-18",
+        934
+      ],
+      "is": {
+        "label": "ETHUSD IS",
+        "trades": 18,
+        "universe": 44,
+        "bias_counts": {
+          "bullish": 26,
+          "neutral": 15,
+          "bearish": 3,
+          "unknown": 0
+        },
+        "sortino": 31.737087810632598,
+        "sharpe": 1.0791090849855671,
+        "total_R_per_year": 15.450959337861013,
+        "max_dd": -0.00697749284567073
+      },
+      "oos": {
+        "label": "ETHUSD OOS",
+        "trades": 7,
+        "universe": 16,
+        "bias_counts": {
+          "bullish": 9,
+          "neutral": 6,
+          "bearish": 1,
+          "unknown": 0
+        },
+        "sortino": 12.550864472371318,
+        "sharpe": 0.6563226548153486,
+        "total_R_per_year": 16.290180912264173,
+        "max_dd": -0.029272448952693653
+      },
+      "full": {
+        "label": "ETHUSD FULL",
+        "trades": 25,
+        "universe": 60,
+        "bias_counts": {
+          "bullish": 35,
+          "neutral": 21,
+          "bearish": 4,
+          "unknown": 0
+        },
+        "sortino": 19.63298313056736,
+        "sharpe": 0.8737484096506615,
+        "total_R_per_year": 13.826305103021111,
+        "max_dd": -0.01851432652219931
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino +12.55<1.0 OR OOS trades 7<10",
+      "robustness": null
+    },
+    "SOLUSD": {
+      "symbol": "SOLUSD",
+      "data_first": "2020-04-10",
+      "data_last": "2026-05-18",
+      "data_bars": 2230,
+      "oos_window": [
+        "2024-07-19",
+        "2026-05-18",
+        669
+      ],
+      "is": {
+        "label": "SOLUSD IS",
+        "trades": 9,
+        "universe": 23,
+        "bias_counts": {
+          "bullish": 14,
+          "neutral": 8,
+          "bearish": 1,
+          "unknown": 0
+        },
+        "sortino": 28.200713753968042,
+        "sharpe": 0.9631357184032858,
+        "total_R_per_year": 8.940087928127651,
+        "max_dd": -0.0046246857549046005
+      },
+      "oos": {
+        "label": "SOLUSD OOS",
+        "trades": 4,
+        "universe": 7,
+        "bias_counts": {
+          "bullish": 3,
+          "neutral": 3,
+          "bearish": 1,
+          "unknown": 0
+        },
+        "sortino": -0.4493043994352703,
+        "sharpe": -0.33604326323104955,
+        "total_R_per_year": -1.6117091217895219,
+        "max_dd": -0.048588973331507246
+      },
+      "full": {
+        "label": "SOLUSD FULL",
+        "trades": 13,
+        "universe": 30,
+        "bias_counts": {
+          "bullish": 17,
+          "neutral": 11,
+          "bearish": 2,
+          "unknown": 0
+        },
+        "sortino": 4.114269475255348,
+        "sharpe": 0.7375113567368743,
+        "total_R_per_year": 5.865381391542922,
+        "max_dd": -0.03640124051153981
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -0.45<1.0 OR OOS trades 4<10",
+      "robustness": null
+    }
+  }
+}
