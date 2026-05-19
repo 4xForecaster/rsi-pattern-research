@@ -1,0 +1,315 @@
+{
+  "seed": 42,
+  "n_boot": 10000,
+  "is_fraction": 0.7,
+  "ship_floor": 3.0,
+  "per_trade_floor": 2.5,
+  "gini_max": 0.7,
+  "pairs": {
+    "GBPUSD": {
+      "oos_window": [
+        "2019-08-23",
+        "2026-05-18"
+      ],
+      "n_trades": 9,
+      "baseline_sortino": 5.566,
+      "trades": [
+        {
+          "entry": "2019-11-19",
+          "exit": "2020-03-18",
+          "r_multiple": -1.0,
+          "multiplier": 1.0,
+          "contribution": -1.0
+        },
+        {
+          "entry": "2022-11-08",
+          "exit": "2023-08-14",
+          "r_multiple": 1.0335,
+          "multiplier": 1.0,
+          "contribution": 1.0335
+        },
+        {
+          "entry": "2023-10-27",
+          "exit": "2023-11-14",
+          "r_multiple": 3.4208,
+          "multiplier": 1.0,
+          "contribution": 3.4208
+        },
+        {
+          "entry": "2023-11-10",
+          "exit": "2024-08-15",
+          "r_multiple": 3.5057,
+          "multiplier": 1.0,
+          "contribution": 3.5057
+        },
+        {
+          "entry": "2024-05-06",
+          "exit": "2025-01-09",
+          "r_multiple": -1.0,
+          "multiplier": 1.0,
+          "contribution": -1.0
+        },
+        {
+          "entry": "2024-05-09",
+          "exit": "2024-08-27",
+          "r_multiple": 3.8505,
+          "multiplier": 1.0,
+          "contribution": 3.8505
+        },
+        {
+          "entry": "2025-03-03",
+          "exit": "2025-12-09",
+          "r_multiple": 1.4378,
+          "multiplier": 1.0,
+          "contribution": 1.4378
+        },
+        {
+          "entry": "2025-04-01",
+          "exit": "2026-01-09",
+          "r_multiple": 0.6309,
+          "multiplier": 1.0,
+          "contribution": 0.6309
+        },
+        {
+          "entry": "2025-11-25",
+          "exit": "2025-12-23",
+          "r_multiple": 4.0789,
+          "multiplier": 3.0,
+          "contribution": 12.2366
+        }
+      ],
+      "bootstrap": {
+        "n_boot": 10000,
+        "nan_rate": 0.10719999999999996,
+        "p5_decision": 0.0,
+        "p50_decision": 4.068574503644965,
+        "p95_decision": 16.46304504140652,
+        "p5_finite": 0.8953502727295558,
+        "p50_finite": 4.687777451449781,
+        "p95_finite": 17.344739369644973
+      },
+      "rolling": {
+        "window_days": 1230,
+        "windows": [
+          {
+            "start": "2019-08-23",
+            "end": "2023-01-04",
+            "n_trades": 2,
+            "sortino": 0.019
+          },
+          {
+            "start": "2020-10-06",
+            "end": "2024-02-18",
+            "n_trades": 3,
+            "sortino": null
+          },
+          {
+            "start": "2021-11-20",
+            "end": "2025-04-03",
+            "n_trades": 7,
+            "sortino": 6.419
+          },
+          {
+            "start": "2023-01-04",
+            "end": "2026-05-18",
+            "n_trades": 7,
+            "sortino": 13.842
+          }
+        ],
+        "n_ge_floor": 2,
+        "min": 0.019,
+        "max": 13.842,
+        "std": 5.648365132201234
+      },
+      "clustering": {
+        "gini_contribution": 0.697,
+        "gini_profit_only": 0.584,
+        "single_30d_window_profit_share": 0.5236,
+        "flag_cluster_dependent": false
+      },
+      "sensitivity": {
+        "min_sortino": 2.843,
+        "min_drop_trade": {
+          "entry": "2025-11-25",
+          "exit": "2025-12-23",
+          "r_multiple": 4.0789,
+          "multiplier": 3.0
+        },
+        "all_nan": false
+      },
+      "sensitivity_per_trade": [
+        {
+          "dropped_entry": "2019-11-19",
+          "sortino": 12.077
+        },
+        {
+          "dropped_entry": "2022-11-08",
+          "sortino": 5.338
+        },
+        {
+          "dropped_entry": "2023-10-27",
+          "sortino": 4.798
+        },
+        {
+          "dropped_entry": "2023-11-10",
+          "sortino": 4.779
+        },
+        {
+          "dropped_entry": "2024-05-06",
+          "sortino": 7.762
+        },
+        {
+          "dropped_entry": "2024-05-09",
+          "sortino": 4.7
+        },
+        {
+          "dropped_entry": "2025-03-03",
+          "sortino": 5.278
+        },
+        {
+          "dropped_entry": "2025-04-01",
+          "sortino": 5.46
+        },
+        {
+          "dropped_entry": "2025-11-25",
+          "sortino": 2.843
+        }
+      ],
+      "verdict": "THIN_GO",
+      "decision_detail": {
+        "conditions": {
+          "bootstrap_p5>=+3.0": false,
+          ">=3/4 rolling>=+3.0": false,
+          "Gini<=0.7": true,
+          "per_trade_min>=+2.5": true
+        },
+        "n_hold": 2
+      }
+    },
+    "NZDUSD": {
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18"
+      ],
+      "n_trades": 4,
+      "baseline_sortino": 5.338,
+      "trades": [
+        {
+          "entry": "2021-10-04",
+          "exit": "2021-11-26",
+          "r_multiple": -1.0,
+          "multiplier": 3.0,
+          "contribution": -3.0
+        },
+        {
+          "entry": "2024-05-01",
+          "exit": "2024-09-24",
+          "r_multiple": 17.4069,
+          "multiplier": 3.0,
+          "contribution": 52.2208
+        },
+        {
+          "entry": "2024-05-09",
+          "exit": "2024-11-14",
+          "r_multiple": -1.0,
+          "multiplier": 1.0,
+          "contribution": -1.0
+        },
+        {
+          "entry": "2025-11-24",
+          "exit": "2025-11-25",
+          "r_multiple": -1.0,
+          "multiplier": 3.0,
+          "contribution": -3.0
+        }
+      ],
+      "bootstrap": {
+        "n_boot": 10000,
+        "nan_rate": 0.008600000000000052,
+        "p5_decision": -0.7368639551303653,
+        "p50_decision": 5.338277832759654,
+        "p95_decision": 88.22176668066956,
+        "p5_finite": -0.7368639551303653,
+        "p50_finite": 5.338277832759654,
+        "p95_finite": 88.22176668066956
+      },
+      "rolling": {
+        "window_days": 1227,
+        "windows": [
+          {
+            "start": "2019-08-28",
+            "end": "2023-01-06",
+            "n_trades": 1,
+            "sortino": null
+          },
+          {
+            "start": "2020-10-10",
+            "end": "2024-02-19",
+            "n_trades": 1,
+            "sortino": null
+          },
+          {
+            "start": "2021-11-23",
+            "end": "2025-04-03",
+            "n_trades": 2,
+            "sortino": 88.774
+          },
+          {
+            "start": "2023-01-06",
+            "end": "2026-05-17",
+            "n_trades": 3,
+            "sortino": 15.733
+          }
+        ],
+        "n_ge_floor": 2,
+        "min": 15.733,
+        "max": 88.774,
+        "std": 36.5205
+      },
+      "clustering": {
+        "gini_contribution": 0.9269,
+        "gini_profit_only": 0.75,
+        "single_30d_window_profit_share": 1.0,
+        "flag_cluster_dependent": true
+      },
+      "sensitivity": {
+        "min_sortino": -0.656,
+        "min_drop_trade": {
+          "entry": "2024-05-01",
+          "exit": "2024-09-24",
+          "r_multiple": 17.4069,
+          "multiplier": 3.0
+        },
+        "all_nan": false
+      },
+      "sensitivity_per_trade": [
+        {
+          "dropped_entry": "2021-10-04",
+          "sortino": 15.733
+        },
+        {
+          "dropped_entry": "2024-05-01",
+          "sortino": -0.656
+        },
+        {
+          "dropped_entry": "2024-05-09",
+          "sortino": 5.518
+        },
+        {
+          "dropped_entry": "2025-11-24",
+          "sortino": 7.683
+        }
+      ],
+      "verdict": "DOWNGRADE_SWEEP",
+      "decision_detail": {
+        "conditions": {
+          "bootstrap_p5>=+3.0": false,
+          ">=3/4 rolling>=+3.0": false,
+          "Gini<=0.7": false,
+          "per_trade_min>=+2.5": false
+        },
+        "n_hold": 0
+      }
+    }
+  }
+}

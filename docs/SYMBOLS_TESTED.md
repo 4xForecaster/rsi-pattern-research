@@ -18,8 +18,8 @@ OR full trades < 10; SWEEP otherwise.
 | USDCHF | fx_major | NO-GO | — | — | +0.87 | 25 | H15 | no |
 | EURUSD | fx_major | **GO** | +4.06 | 12 | +3.15 | 30 | H23 | no (`enabled: false`) |
 | USDCAD | fx_major | **GO** | +3.12 | 15 | +4.36 | 35 | H23 | no (`enabled: false`) |
-| GBPUSD | fx_major | **GO ⚠ thin-OOS** | +5.57 | 9 | +4.91 | 34 | H23 | no (`enabled: false`) |
-| NZDUSD | fx_major | **GO ⚠⚠ provisional** | +5.34 | 4 | +4.42 | 35 | H23 | no (`enabled: false`) |
+| GBPUSD | fx_major | **THIN GO** (H24 2/4) | +5.57 | 9 | +4.91 | 34 | H23→H24 | no (`enabled: false`) |
+| NZDUSD | fx_major | **SWEEP** (H24 0/4, downgraded) | +5.34 | 4 | +4.42 | 35 | H23→H24 | no (`enabled: false`) |
 | AUDUSD | fx_major | SWEEP | +1.85 | 9 | +2.21 | 33 | H23 | no |
 | USDJPY | fx_major | SWEEP | +1.64 | 16 | +1.34 | 47 | H23 | no |
 | USDSEK | fx_exotic | NOT RUN | — | — | — | — | — | no |
@@ -46,21 +46,30 @@ OOS estimate. Full +4.36 / 35.
 is buying CAD weakness / USD strength. Worked here, but watch for the same
 long-only-bias risk that sinks USDJPY if behaviour regime-shifts.
 
-### GBPUSD — GO ⚠ thin-OOS. H23 (2026-05-19)
-yfinance `GBPUSD=X`, 5,839 daily bars 2003-12-01→2026-05-18. OOS Sortino
-+5.57 but on only **9 OOS trades** (below the n<10 small-sample line).
-Full sample robust (+4.91 / 34), IS (+5.51) ≈ OOS — directionally a clean
-GO but the OOS Sortino is a 9-sample figure. Brexit-year (2016) exclusion
-does not change the full-sample number. **Do NOT flip `enabled: true`
-before an H24 OOS-robustness pass.**
+### GBPUSD — THIN GO. H23 (2026-05-19) → H24 (2026-05-19)
+yfinance `GBPUSD=X`, 5,839 daily bars 2003-12-01→2026-05-18. H23 OOS
++5.57 / 9 trades, full +4.91 / 34. **H24 robustness pass: 2/4 conditions
+hold → stays THIN GO.** Passed Gini (0.697 ≤ 0.7) and per-trade
+sensitivity (min Sortino +2.84 even dropping its largest trade — NOT a
+one-trade artifact). Failed bootstrap (decision p5 +0.00 / finite +0.90 <
++3.0) and rolling stability (2/4 windows; 2019→2023 sub-window Sortino
++0.02). Edge is real but **regime-concentrated post-2023**, not
+stationary. **Do NOT flip `enabled: true`** — a clean flip needs the
+post-2023 behaviour to persist into a true *forward* window (~12 months
+live-paper), not more in-sample slicing. See results/H24_thin_go_
+robustness.md.
 
-### NZDUSD — GO ⚠⚠ provisional. H23 (2026-05-19)
-yfinance `NZDUSD=X`, 5,828 daily bars 2003-12-01→2026-05-18. OOS Sortino
-+5.34 rests on **only 4 OOS trades**, mean R +11.31 — one or two trades
-dominate; the OOS slice is statistically meaningless on its own. The GO is
-carried by the strong *full* sample (+4.42 / 35) and IS (+4.70 / 31), not
-the OOS slice. **Provisional. Must NOT be flipped live without H24
-confirming the edge on a non-degenerate OOS sample.**
+### NZDUSD — SWEEP (downgraded). H23 (2026-05-19) → H24 (2026-05-19)
+yfinance `NZDUSD=X`, 5,828 daily bars 2003-12-01→2026-05-18. H23 OOS
++5.34 / 4 trades. **H24 robustness pass: 0/4 conditions hold →
+DOWNGRADED GO → SWEEP.** Three of four OOS trades are full −1R losers;
+the entire positive Sortino is the single 2024-05-01 trade (+17.4R, 3×).
+Drop it → Sortino −0.66. 100% of profit in one 30-day window; Gini 0.93.
+The H23 GO was a 4-sample mirage — exactly the artifact the no-spurious-
+ship doctrine exists to catch. Not rejected outright (full-sample H23
++4.42 / 35 is genuinely positive); parked at `sweep_needed` pending a
+real forward-OOS follow-up, NOT a parameter re-tune (out of scope). See
+results/H24_thin_go_robustness.md.
 
 ### AUDUSD — SWEEP (structural). H23 (2026-05-19)
 yfinance `AUDUSD=X`, 5,203 daily bars 2006-05-16→2026-05-18. OOS +1.85,
