@@ -11,23 +11,43 @@ daily non-overlapping equity. Decision on the **70/30 OOS** protocol:
 GO = OOS Sortino ≥ +3.0 AND full trades ≥ 30; NO-GO = OOS Sortino < +1.0
 OR full trades < 10; SWEEP otherwise.
 
-| Symbol | Class | Decision | OOS Sortino | OOS Tr | Full Sortino | Full Tr | Exp. | Live? |
-|---|---|---|---:|---:|---:|---:|---|---|
-| DXY | index | GO (shipped) | +5.38 (7y) / +1.34 (70/30)† | 14 / 19 | +5.75 | 56 | H12/H15 | **yes** (`enabled: true`) |
-| USDMXN | fx_emerging | SWEEP | +2.53 | — | +4.41 | 26 | H15/H16 | no |
-| USDCHF | fx_major | NO-GO | — | — | +0.87 | 25 | H15 | no |
-| EURUSD | fx_major | **GO** | +4.06 | 12 | +3.15 | 30 | H23 | no (`enabled: false`) |
-| USDCAD | fx_major | **GO** | +3.12 | 15 | +4.36 | 35 | H23 | no (`enabled: false`) |
-| GBPUSD | fx_major | **THIN GO** (H24 2/4) | +5.57 | 9 | +4.91 | 34 | H23→H24 | no (`enabled: false`) |
-| NZDUSD | fx_major | **SWEEP** (H24 0/4, downgraded) | +5.34 | 4 | +4.42 | 35 | H23→H24 | no (`enabled: false`) |
-| AUDUSD | fx_major | SWEEP | +1.85 | 9 | +2.21 | 33 | H23 | no |
-| USDJPY | fx_major | SWEEP | +1.64 | 16 | +1.34 | 47 | H23 | no |
-| USDSEK | fx_exotic | NOT RUN | — | — | — | — | — | no |
-| USDZAR | fx_exotic | NOT RUN | — | — | — | — | — | no |
+M-LONG decision is the daily Scheme D verdict above. **V-SHORT (H25)** is
+the symmetric V-floor-breach SHORT decision (same 70/30 protocol, inverted
+Scheme D, no re-tune); directional quadrant in the last column.
+
+| Symbol | Class | M-LONG Decision | OOS Sortino | OOS Tr | Full Sortino | Full Tr | Exp. | M-LONG Live? | V-SHORT (H25) | Quadrant |
+|---|---|---|---:|---:|---:|---:|---|---|---|---|
+| DXY | index | GO (shipped) | +5.38 (7y) / +1.34 (70/30)† | 14 / 19 | +5.75 | 56 | H12/H15 | **yes** (`enabled: true`) | NO-GO (OOS +0.10) | NEITHER |
+| USDMXN | fx_emerging | SWEEP | +2.53 | — | +4.41 | 26 | H15/H16 | no | NO-GO (OOS +0.54) | NEITHER |
+| USDCHF | fx_major | NO-GO | — | — | +0.87 | 25 | H15 | no | NO-GO (OOS +0.48) | NEITHER |
+| EURUSD | fx_major | **GO** | +4.06 | 12 | +3.15 | 30 | H23 | no (`enabled: false`) | SWEEP (GO-by-rule, H24-robust 1/4) | LONG-ONLY |
+| USDCAD | fx_major | **GO** | +3.12 | 15 | +4.36 | 35 | H23 | no (`enabled: false`) | NO-GO (OOS +0.38) | LONG-ONLY |
+| GBPUSD | fx_major | **THIN GO** (H24 2/4) | +5.57 | 9 | +4.91 | 34 | H23→H24 | no (`enabled: false`) | SWEEP (OOS +2.24) | LONG-ONLY |
+| NZDUSD | fx_major | **SWEEP** (H24 0/4, downgraded) | +5.34 | 4 | +4.42 | 35 | H23→H24 | no (`enabled: false`) | NO-GO (OOS −0.26) | LONG-ONLY |
+| AUDUSD | fx_major | SWEEP | +1.85 | 9 | +2.21 | 33 | H23 | no | NO-GO (OOS −2.76) | NEITHER |
+| USDJPY | fx_major | SWEEP | +1.64 | 16 | +1.34 | 47 | H23 | no | SWEEP (OOS +2.44) | NEITHER |
+| USDSEK | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
+| USDZAR | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
 
 † DXY shipped on the H15 full-sample decision and a 7-year OOS window
 (+5.38). Under the *stricter* H23 70/30 split DXY itself is only SWEEP
 (OOS +1.34) — i.e. the H23 bar is harder than the bar DXY cleared.
+
+## V-SHORT (H25, 2026-05-19) — directional negative result
+
+Symmetric V-floor-breach SHORT tested across all 9 pairs. Faithfulness
+gate passed (DXY mean R +0.4766 ≈ H8 +0.48); long/short trailing-stop
+symmetry unit-tested 12/12. **Zero V-SHORT GOs.** Quadrant tally: 4
+LONG-ONLY, 5 NEITHER, 0 SHORT-ONLY, 0 BOTH. The directional-inverse
+hypothesis (M-LONG-fail pairs flip to V-SHORT GO) is **falsified** — the
+supposed beneficiaries are the worst V-SHORT performers (AUDUSD OOS
+−2.76, USDMXN +0.54, USDCHF +0.48). EURUSD V-SHORT was GO-by-rule (OOS
++4.26 / full 34) but the H24 robustness gate caught it as a cluster
+artifact (Gini 0.92, 1/4) and downgraded it — the same mechanism that
+caught NZDUSD M-LONG, confirming the gate generalizes across directions.
+**No hurst-agent integration** (0 GO ⇒ no `v_short_symbols:` block, no
+`v_short.py`, no schema bump). `strategies_vshort.py` kept as a faithful
+unit-tested research asset. Detail: results/H25_vshort_expansion.md.
 
 ## Per-symbol notes
 

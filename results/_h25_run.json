@@ -1,0 +1,352 @@
+{
+  "seed": 42,
+  "is_fraction": 0.7,
+  "scheme_d_vshort": [
+    0.0,
+    1.0,
+    3.0
+  ],
+  "faithfulness": {
+    "dxy_mean_r": 0.47664828288924593,
+    "anchor": 0.48,
+    "pass": true
+  },
+  "skipped": {},
+  "pairs": {
+    "DXY": {
+      "data_first": "1990-01-02",
+      "data_last": "2026-05-04",
+      "data_bars": 9304,
+      "oos_window": [
+        "2015-07-23",
+        "2026-05-04",
+        2792
+      ],
+      "vshort": {
+        "full_trades": 59,
+        "full_sortino": 0.659,
+        "oos_trades": 18,
+        "oos_sortino": 0.096,
+        "is_sortino": 0.873,
+        "oos_max_dd": -0.101,
+        "bias_counts_full": {
+          "bullish": 4,
+          "neutral": 20,
+          "bearish": 39,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino +0.10<1.0 or full 59<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 56,
+        "full_sortino": 5.753,
+        "oos_trades": 19,
+        "oos_sortino": 1.344
+      },
+      "mlong_decision": "SWEEP",
+      "quadrant": "NEITHER (untradeable here)"
+    },
+    "EURUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5827,
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "vshort": {
+        "full_trades": 34,
+        "full_sortino": 1.848,
+        "oos_trades": 13,
+        "oos_sortino": 4.256,
+        "is_sortino": 1.939,
+        "oos_max_dd": -0.0475,
+        "bias_counts_full": {
+          "bullish": 2,
+          "neutral": 17,
+          "bearish": 17,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "SWEEP",
+      "vshort_reason": "OOS Sortino +4.26\u22653.0 & full 34\u226530 (OOS n=13) | H24-robustness 0-1/4 -> downgraded (DOWNGRADE_SWEEP)",
+      "vshort_robustness": {
+        "boot_p5": 0.602,
+        "boot_p50": 3.999,
+        "rolling": [
+          8.558,
+          6.581,
+          0.48,
+          -0.883
+        ],
+        "n_rolling_ge": 2,
+        "gini": 0.9209,
+        "per_trade_min": 2.866,
+        "conditions": {
+          "boot_p5>=3": false,
+          ">=3/4 roll": false,
+          "gini<=0.7": false,
+          "per_trade>=2.5": true
+        },
+        "n_hold": 1,
+        "verdict": "DOWNGRADE_SWEEP"
+      },
+      "mlong": {
+        "full_trades": 30,
+        "full_sortino": 3.147,
+        "oos_trades": 12,
+        "oos_sortino": 4.065
+      },
+      "mlong_decision": "GO",
+      "quadrant": "LONG-ONLY (trend-with-USD/base)"
+    },
+    "GBPUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5839,
+      "oos_window": [
+        "2019-08-23",
+        "2026-05-18",
+        1752
+      ],
+      "vshort": {
+        "full_trades": 19,
+        "full_sortino": 0.399,
+        "oos_trades": 11,
+        "oos_sortino": 2.24,
+        "is_sortino": 0.167,
+        "oos_max_dd": -0.0961,
+        "bias_counts_full": {
+          "bullish": 6,
+          "neutral": 9,
+          "bearish": 10,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "SWEEP",
+      "vshort_reason": "OOS Sortino +2.24 in [1,3) / thin (full=19, OOS=11)",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 34,
+        "full_sortino": 4.907,
+        "oos_trades": 9,
+        "oos_sortino": 5.566
+      },
+      "mlong_decision": "GO",
+      "quadrant": "LONG-ONLY (trend-with-USD/base)"
+    },
+    "USDJPY": {
+      "data_first": "1996-10-30",
+      "data_last": "2026-05-18",
+      "data_bars": 7661,
+      "oos_window": [
+        "2017-07-17",
+        "2026-05-18",
+        2299
+      ],
+      "vshort": {
+        "full_trades": 41,
+        "full_sortino": 4.704,
+        "oos_trades": 9,
+        "oos_sortino": 2.435,
+        "is_sortino": 7.612,
+        "oos_max_dd": -0.0466,
+        "bias_counts_full": {
+          "bullish": 5,
+          "neutral": 26,
+          "bearish": 15,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "SWEEP",
+      "vshort_reason": "OOS Sortino +2.44 in [1,3) / thin (full=41, OOS=9)",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 47,
+        "full_sortino": 1.337,
+        "oos_trades": 16,
+        "oos_sortino": 1.636
+      },
+      "mlong_decision": "SWEEP",
+      "quadrant": "NEITHER (untradeable here)"
+    },
+    "USDCAD": {
+      "data_first": "2003-09-17",
+      "data_last": "2026-05-18",
+      "data_bars": 5895,
+      "oos_window": [
+        "2019-07-31",
+        "2026-05-18",
+        1769
+      ],
+      "vshort": {
+        "full_trades": 40,
+        "full_sortino": 0.27,
+        "oos_trades": 13,
+        "oos_sortino": 0.375,
+        "is_sortino": 0.47,
+        "oos_max_dd": -0.0551,
+        "bias_counts_full": {
+          "bullish": 5,
+          "neutral": 10,
+          "bearish": 30,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino +0.38<1.0 or full 40<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 35,
+        "full_sortino": 4.359,
+        "oos_trades": 15,
+        "oos_sortino": 3.116
+      },
+      "mlong_decision": "GO",
+      "quadrant": "LONG-ONLY (trend-with-USD/base)"
+    },
+    "AUDUSD": {
+      "data_first": "2006-05-16",
+      "data_last": "2026-05-18",
+      "data_bars": 5203,
+      "oos_window": [
+        "2020-05-18",
+        "2026-05-18",
+        1561
+      ],
+      "vshort": {
+        "full_trades": 26,
+        "full_sortino": 1.217,
+        "oos_trades": 4,
+        "oos_sortino": -2.763,
+        "is_sortino": 7.865,
+        "oos_max_dd": -0.12,
+        "bias_counts_full": {
+          "bullish": 2,
+          "neutral": 12,
+          "bearish": 14,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino -2.76<1.0 or full 26<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 33,
+        "full_sortino": 2.206,
+        "oos_trades": 9,
+        "oos_sortino": 1.85
+      },
+      "mlong_decision": "SWEEP",
+      "quadrant": "NEITHER (untradeable here)"
+    },
+    "NZDUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5828,
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "vshort": {
+        "full_trades": 29,
+        "full_sortino": 0.204,
+        "oos_trades": 12,
+        "oos_sortino": -0.259,
+        "is_sortino": 0.022,
+        "oos_max_dd": -0.1011,
+        "bias_counts_full": {
+          "bullish": 5,
+          "neutral": 8,
+          "bearish": 21,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino -0.26<1.0 or full 29<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 35,
+        "full_sortino": 4.417,
+        "oos_trades": 4,
+        "oos_sortino": 5.338
+      },
+      "mlong_decision": "GO",
+      "quadrant": "LONG-ONLY (trend-with-USD/base)"
+    },
+    "USDMXN": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5848,
+      "oos_window": [
+        "2019-08-20",
+        "2026-05-18",
+        1755
+      ],
+      "vshort": {
+        "full_trades": 50,
+        "full_sortino": 0.029,
+        "oos_trades": 21,
+        "oos_sortino": 0.544,
+        "is_sortino": -0.269,
+        "oos_max_dd": -0.1029,
+        "bias_counts_full": {
+          "bullish": 5,
+          "neutral": 17,
+          "bearish": 33,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino +0.54<1.0 or full 50<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 26,
+        "full_sortino": 4.412,
+        "oos_trades": 7,
+        "oos_sortino": 2.529
+      },
+      "mlong_decision": "SWEEP",
+      "quadrant": "NEITHER (untradeable here)"
+    },
+    "USDCHF": {
+      "data_first": "2003-09-17",
+      "data_last": "2026-05-18",
+      "data_bars": 5893,
+      "oos_window": [
+        "2019-08-01",
+        "2026-05-18",
+        1768
+      ],
+      "vshort": {
+        "full_trades": 41,
+        "full_sortino": 1.555,
+        "oos_trades": 12,
+        "oos_sortino": 0.483,
+        "is_sortino": 1.598,
+        "oos_max_dd": -0.0583,
+        "bias_counts_full": {
+          "bullish": 5,
+          "neutral": 22,
+          "bearish": 19,
+          "unknown": 0
+        }
+      },
+      "vshort_decision": "NO-GO",
+      "vshort_reason": "OOS Sortino +0.48<1.0 or full 41<10",
+      "vshort_robustness": null,
+      "mlong": {
+        "full_trades": 25,
+        "full_sortino": 0.869,
+        "oos_trades": 6,
+        "oos_sortino": 2.432
+      },
+      "mlong_decision": "SWEEP",
+      "quadrant": "NEITHER (untradeable here)"
+    }
+  }
+}
