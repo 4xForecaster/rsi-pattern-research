@@ -1,0 +1,329 @@
+{
+  "seed": 42,
+  "is_fraction": 0.7,
+  "fld_cycles_fixed": [
+    10,
+    20,
+    40
+  ],
+  "finding1_ladder_null": {
+    "BTCUSD": {
+      "(10, 20, 40)": {
+        "universe": 24,
+        "trades": 5,
+        "sortino": 0.65
+      },
+      "(5, 10, 20)": {
+        "universe": 24,
+        "trades": 9,
+        "sortino": 0.47
+      },
+      "(8, 16, 32)": {
+        "universe": 24,
+        "trades": 7,
+        "sortino": 1.71
+      },
+      "(6, 12, 24)": {
+        "universe": 24,
+        "trades": 9,
+        "sortino": 0.87
+      }
+    },
+    "ETHUSD": {
+      "(10, 20, 40)": {
+        "universe": 16,
+        "trades": 7,
+        "sortino": 12.55
+      },
+      "(5, 10, 20)": {
+        "universe": 16,
+        "trades": 8,
+        "sortino": 9.36
+      },
+      "(8, 16, 32)": {
+        "universe": 16,
+        "trades": 8,
+        "sortino": 7.29
+      },
+      "(6, 12, 24)": {
+        "universe": 16,
+        "trades": 8,
+        "sortino": 9.36
+      }
+    },
+    "SOLUSD": {
+      "(10, 20, 40)": {
+        "universe": 7,
+        "trades": 4,
+        "sortino": -0.45
+      },
+      "(5, 10, 20)": {
+        "universe": 7,
+        "trades": 5,
+        "sortino": -0.43
+      },
+      "(8, 16, 32)": {
+        "universe": 7,
+        "trades": 3,
+        "sortino": -0.24
+      },
+      "(6, 12, 24)": {
+        "universe": 7,
+        "trades": 5,
+        "sortino": -0.66
+      }
+    }
+  },
+  "recon_is": {
+    "BTCUSD": {
+      "dominant_periods_bars": [
+        3.3,
+        5.4,
+        8.4,
+        9.0,
+        15.2,
+        17.9,
+        20.7,
+        60.9
+      ],
+      "is_bars": 2983
+    },
+    "ETHUSD": {
+      "dominant_periods_bars": [
+        3.1,
+        3.1,
+        3.3,
+        3.4,
+        3.4,
+        14.3,
+        90.8,
+        114.6
+      ],
+      "is_bars": 2179
+    },
+    "SOLUSD": {
+      "dominant_periods_bars": [
+        3.0,
+        3.9,
+        4.8,
+        7.6,
+        8.3,
+        8.3,
+        26.4,
+        104.0
+      ],
+      "is_bars": 1561
+    }
+  },
+  "cadences": [
+    {
+      "name": "D0_RSI14_baseline",
+      "rsi_period": 14,
+      "max_span": 30,
+      "max_completion": 30,
+      "min_peak_distance": 3,
+      "role": "baseline"
+    },
+    {
+      "name": "D1_RSI9_crypto",
+      "rsi_period": 9,
+      "max_span": 19,
+      "max_completion": 19,
+      "min_peak_distance": 2,
+      "role": "primary"
+    },
+    {
+      "name": "D2_RSI7_sensitivity",
+      "rsi_period": 7,
+      "max_span": 15,
+      "max_completion": 15,
+      "min_peak_distance": 2,
+      "role": "sensitivity"
+    }
+  ],
+  "results": {
+    "BTCUSD": {
+      "oos_window": [
+        "2022-11-17",
+        "2026-05-18",
+        1279
+      ],
+      "cadences": {
+        "D0_RSI14_baseline": {
+          "role": "baseline",
+          "rsi": 14,
+          "oos_universe": 24,
+          "oos_trades": 5,
+          "oos_sortino": 0.648,
+          "oos_max_dd": -0.0631,
+          "full_trades": 26,
+          "full_sortino": 8.296,
+          "decision_strict": "NO-GO",
+          "decision_pragmatic": "NO-GO",
+          "robustness": null
+        },
+        "D1_RSI9_crypto": {
+          "role": "primary",
+          "rsi": 9,
+          "oos_universe": 36,
+          "oos_trades": 18,
+          "oos_sortino": 0.976,
+          "oos_max_dd": -0.0371,
+          "full_trades": 46,
+          "full_sortino": 3.837,
+          "decision_strict": "NO-GO",
+          "decision_pragmatic": "NO-GO",
+          "robustness": null
+        },
+        "D2_RSI7_sensitivity": {
+          "role": "sensitivity",
+          "rsi": 7,
+          "oos_universe": 41,
+          "oos_trades": 19,
+          "oos_sortino": 0.723,
+          "oos_max_dd": -0.0744,
+          "full_trades": 56,
+          "full_sortino": 5.724,
+          "decision_strict": "NO-GO",
+          "decision_pragmatic": "NO-GO",
+          "robustness": null
+        }
+      }
+    },
+    "ETHUSD": {
+      "oos_window": [
+        "2023-10-28",
+        "2026-05-18",
+        934
+      ],
+      "cadences": {
+        "D0_RSI14_baseline": {
+          "role": "baseline",
+          "rsi": 14,
+          "oos_universe": 16,
+          "oos_trades": 7,
+          "oos_sortino": 12.551,
+          "oos_max_dd": -0.0293,
+          "full_trades": 25,
+          "full_sortino": 19.633,
+          "decision_strict": "NO-GO",
+          "decision_pragmatic": "SWEEP",
+          "robustness": null
+        },
+        "D1_RSI9_crypto": {
+          "role": "primary",
+          "rsi": 9,
+          "oos_universe": 23,
+          "oos_trades": 12,
+          "oos_sortino": 6.19,
+          "oos_max_dd": -0.0326,
+          "full_trades": 33,
+          "full_sortino": 3.865,
+          "decision_strict": "SWEEP",
+          "decision_pragmatic": "GO",
+          "robustness": {
+            "boot_p5": 0.469,
+            "rolling": [
+              8.69,
+              8.186,
+              41.839,
+              null
+            ],
+            "n_rolling_ge": 3,
+            "gini": 0.8549,
+            "per_trade_min": 3.612,
+            "n_hold": 2,
+            "verdict": "THIN_GO"
+          }
+        },
+        "D2_RSI7_sensitivity": {
+          "role": "sensitivity",
+          "rsi": 7,
+          "oos_universe": 27,
+          "oos_trades": 16,
+          "oos_sortino": 7.531,
+          "oos_max_dd": -0.024,
+          "full_trades": 43,
+          "full_sortino": 4.728,
+          "decision_strict": "SWEEP",
+          "decision_pragmatic": "GO",
+          "robustness": {
+            "boot_p5": 1.748,
+            "rolling": [
+              10.548,
+              5.889,
+              10.061,
+              2.141
+            ],
+            "n_rolling_ge": 3,
+            "gini": 0.7277,
+            "per_trade_min": 4.878,
+            "n_hold": 2,
+            "verdict": "THIN_GO"
+          }
+        }
+      }
+    },
+    "SOLUSD": {
+      "oos_window": [
+        "2024-07-19",
+        "2026-05-18",
+        669
+      ],
+      "cadences": {
+        "D0_RSI14_baseline": {
+          "role": "baseline",
+          "rsi": 14,
+          "oos_universe": 7,
+          "oos_trades": 4,
+          "oos_sortino": -0.449,
+          "oos_max_dd": -0.0486,
+          "full_trades": 13,
+          "full_sortino": 4.114,
+          "decision_strict": "NO-GO",
+          "decision_pragmatic": "NO-GO",
+          "robustness": null
+        },
+        "D1_RSI9_crypto": {
+          "role": "primary",
+          "rsi": 9,
+          "oos_universe": 16,
+          "oos_trades": 12,
+          "oos_sortino": 3.795,
+          "oos_max_dd": -0.0331,
+          "full_trades": 29,
+          "full_sortino": 7.284,
+          "decision_strict": "SWEEP",
+          "decision_pragmatic": "SWEEP",
+          "robustness": null
+        },
+        "D2_RSI7_sensitivity": {
+          "role": "sensitivity",
+          "rsi": 7,
+          "oos_universe": 19,
+          "oos_trades": 13,
+          "oos_sortino": 3.678,
+          "oos_max_dd": -0.027,
+          "full_trades": 31,
+          "full_sortino": 13.314,
+          "decision_strict": "SWEEP",
+          "decision_pragmatic": "GO",
+          "robustness": {
+            "boot_p5": 0.13,
+            "rolling": [
+              7.948,
+              -0.534,
+              -0.443,
+              -0.785
+            ],
+            "n_rolling_ge": 1,
+            "gini": 1.1382,
+            "per_trade_min": 2.369,
+            "n_hold": 0,
+            "verdict": "DOWNGRADE_SWEEP"
+          }
+        }
+      }
+    }
+  }
+}

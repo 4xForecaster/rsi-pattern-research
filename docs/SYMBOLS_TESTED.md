@@ -28,9 +28,9 @@ Scheme D, no re-tune); directional quadrant in the last column.
 | USDJPY | fx_major | SWEEP | +1.64 | 16 | +1.34 | 47 | H23 | no | SWEEP (OOS +2.44) | NEITHER |
 | USDSEK | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
 | USDZAR | fx_exotic | NOT RUN | — | — | — | — | — | no | NOT RUN | — |
-| BTCUSD | crypto | NO-GO (H26) | +0.65 | 5 | +8.30 | 26 | H26 | no | NOT RUN | — |
-| ETHUSD | crypto | NO-GO¹ (H26, trade-count only) | **+12.55** | 7 | +19.63 | 25 | H26 | no | NOT RUN | — |
-| SOLUSD | crypto | NO-GO (H26, data-constrained) | −0.45 | 4 | +4.11 | 13 | H26 | no | NOT RUN | — |
+| BTCUSD | crypto | NO-GO (H26/H27) | +0.65 | 5 | +8.30 | 26 | H26→H27 | no | NOT RUN | — |
+| ETHUSD | crypto | NO-GO¹ → **FWD-TEST candidate** (H27, RSI9 cadence) | +12.55 (D0) / +6.19 (RSI9) | 7 / 12 | +19.63 | 25 | H26→H27 | no | NOT RUN | — |
+| SOLUSD | crypto | NO-GO (H26/H27; RSI7 GO killed by robustness 0/4) | −0.45 / +3.79 (RSI9) | 4 / 12 | +4.11 | 13 | H26→H27 | no | NOT RUN | — |
 | BNBUSD / XRPUSD | crypto | NOT RUN (bonus gated on BTC/ETH GO) | — | — | — | — | H26 | no | NOT RUN | — |
 
 † DXY shipped on the H15 full-sample decision and a 7-year OOS window
@@ -71,6 +71,34 @@ hurst-agent integration (0 GO). Actionable next step: **H27 — crypto-
 native cycle re-recon + ladder (e.g. 5/10/20 or 8/16/32)** as a fresh
 calibrated experiment, then re-test at the locked floors. Detail:
 results/H26_crypto_expansion.md.
+
+## Crypto cadence recalibration (H27, 2026-05-21)
+
+H26's "recalibrate the FLD ladder" hypothesis is **falsified**: the FLD
+ladder is a **null lever** — the M-top universe is invariant to it (BTC
+24 / ETH 16 / SOL 7 across (10,20,40)/(5,10,20)/(8,16,32)/(6,12,24)); it
+only drives Scheme-D sizing. The **real lever is detection cadence**:
+shortening RSI + scaling the M timing windows grows the universe (BTC
+24→41, ETH 16→27, SOL 7→19) and preserves the edge. Pre-registered
+primary cadence = **RSI9, windows ~0.64×** (theory/recon-chosen, the
+*moderate* option — NOT the best-OOS RSI7, anti-cherry-pick). Faithfulness:
+RSI14 reproduces H26 exactly.
+
+**Primary-rule (RSI9 / STRICT OOS-trade) result: 0 GO.** Reads:
+- **ETHUSD → forward-test candidate.** RSI9 cadence: OOS Sortino +6.19 on
+  12 trades, PRAGMATIC GO, robustness THIN (2/4); RSI7: +7.53/16, also
+  PRAGMATIC GO 2/4. STRICT still SWEEP (<30 OOS trades) and OOS was peeked
+  in exploratory probing → **forward/paper watchlist, NOT live**. Clean
+  test = forward data (H28).
+- **SOLUSD** — RSI9 SWEEP both rules; RSI7 PRAGMATIC GO is a cluster
+  artifact (robustness 0/4) → killed. Not tradeable yet (short history).
+- **BTCUSD** — universe grows with cadence but OOS Sortino stays ~+0.7–1.0
+  → NO-GO at every cadence; no OOS edge independent of sampling.
+
+No hurst-agent change (0 GO at the primary bar; ETH is a candidate, not a
+classification). The cadence lever is now validated program-wide (explains
+why low-N symbols fail + how to grow their universe without touching edge
+logic). Detail: results/H27_crypto_cycle_recalibration.md.
 
 ## Per-symbol notes
 
