@@ -100,6 +100,29 @@ classification). The cadence lever is now validated program-wide (explains
 why low-N symbols fail + how to grow their universe without touching edge
 logic). Detail: results/H27_crypto_cycle_recalibration.md.
 
+## TimesFM zero-shot benchmark (H28, 2026-06-18)
+
+Pretrained Google TimesFM 2.5 (200M, PyTorch checkpoint
+`google/timesfm-2.5-200m-pytorch`) benchmarked zero-shot on daily DXY,
+EURUSD, USDCAD with a 1000-bar context, horizons {1, 5, 20}, same 70/30
+OOS slice as the rest of the H-series. Three pre-registered axes; **0/3
+cleared on all 3 symbols**:
+
+| Symbol | (a) RMSE-vs-baselines | (b) Directional ≥55%, p<0.05 | (c) Calibration ≤ 5pp dev | TimesFM verdict |
+|---|---|---|---|---|
+| DXY    | ❌ TimesFM loses all 3 horizons | ❌ acc 0.495–0.502 (p≫0.05) | ❌ 50.8 pp deviation | **negative** |
+| EURUSD | ❌ TimesFM loses all 3 horizons | ❌ acc 0.507–0.511 (p≫0.05) | ❌ 50.6 pp deviation | **negative** |
+| USDCAD | ❌ TimesFM loses all 3 horizons | ❌ acc 0.501       (p≫0.05) | ❌ 51.4 pp deviation | **negative** |
+
+The calibration failure is the largest: TimesFM's nominal 80%/90% bands
+cover only ~29% of realized log-returns — confidently wrong, not just
+inaccurate. Random walk + 20-bar trend continuation beat it on every
+horizon. No `TIMESFM_INTEGRATION.md` written, hurst-agent untouched.
+Negative is specific to **zero-shot daily price-level forecasting on
+these 3 FX series** — does not preclude separately benchmarked use cases
+(intraday, covariates) which would be their own H-series. Detail:
+results/H28_timesfm_negative.md.
+
 ## Per-symbol notes
 
 ### EURUSD — GO (solid). H23 (2026-05-19)

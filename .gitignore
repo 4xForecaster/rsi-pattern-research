@@ -12,6 +12,8 @@ dist/
 # Data (BarChart CSVs are paid data, never commit)
 data/dxy/*.csv
 data/*/*.csv
+# H28 TimesFM forecast cache (regenerable from pinned ticker + model + version)
+data/h28_timesfm_cache/
 
 # Notebooks (keep .ipynb but ignore checkpoints)
 .ipynb_checkpoints/
