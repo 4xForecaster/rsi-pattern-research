@@ -153,19 +153,88 @@ def detect_box_numpy(
     distance: int = DISTANCE_BARS,
     t_endpoint: TEndpoint = "p2",
     max_length: Optional[int] = MAX_LENGTH_BARS,
+    legacy: bool = False,
 ) -> list[BoxPattern]:
     """One-pass box detector. ``direction='long'`` → P0=trough, P1=peak;
     ``direction='short'`` → P0=peak, P1=trough.
 
-    ``t_endpoint`` controls how the translation midpoint is computed:
-      * ``"p2"`` (H30 default, corrected): T-mid = (P0 + P2)/2 — measures
-        rally vs correction cleanly.
-      * ``"p3"`` (H29 legacy): T-mid = (P0 + P3)/2 — contaminated by the
-        breakout phase, kept available so H29 results stay reproducible.
+    H30b (2026-06-20, this revision) — **corrected P1 algorithm**.
 
-    ``max_length`` (in bars, P3 − P0) drops boxes longer than the cap to
-    prevent the "mega-box" artifact (the 1024-bar 2022→2026 DXY case).
+    The legacy detector (H29 / H30a) nominated P1 from a pre-computed
+    ``find_peaks`` list, locking it at the FIRST local extremum after P0.
+    On a dominant impulse with intermediate prominent peaks (e.g. the 2008
+    DXY rally: P0 ≈ 75.7 in Sep '08, first local peak ≈ 82 early Oct '08,
+    dominant peak ≈ 88 late Oct '08), the legacy code locked P1 at 82 and
+    ran the rest of the geometry off the wrong opposite swing.
+
+    Corrected algorithm: walk forward from each candidate P0, maintaining a
+    running extreme (max-high for LONG, min-low for SHORT). P1 only locks
+    when the first 50%-retracement bar fires the box pre-condition, at
+    which moment P1 = (running_extreme_idx, running_extreme_price). This
+    lets P1 extend with the impulse until the impulse demonstrably ends.
+    Concurrent P0 candidates are tracked; an invalidating extreme
+    (low < P0_price for LONG, etc.) drops the candidate and respawns one
+    at the current bar; the first candidate to trigger AND complete (P3
+    found within max_length) wins, with later in-box candidates dropped
+    for dedup.
+
+    ``legacy=True`` restores the H29/H30a behaviour for reproducibility.
+
+    ``t_endpoint`` controls how the translation midpoint is computed:
+      * ``"p2"`` (H30 default, corrected): T-mid = (P0 + P2)/2.
+      * ``"p3"`` (H29 legacy): T-mid = (P0 + P3)/2.
+
+    ``max_length`` (bars, P3 − P0) drops boxes longer than the cap and
+    additionally abandons P0 candidates whose impulse phase exceeds it.
     Pass ``None`` to disable.
+    """
+    if legacy:
+        return _detect_box_legacy(highs, lows, closes, direction,
+                                   prominence_frac=prominence_frac,
+                                   distance=distance,
+                                   t_endpoint=t_endpoint,
+                                   max_length=max_length)
+    return _detect_box_corrected(highs, lows, closes, direction,
+                                  prominence_frac=prominence_frac,
+                                  distance=distance,
+                                  t_endpoint=t_endpoint,
+                                  max_length=max_length)
+
+
+# ---------------------------------------------------------------------------
+# Corrected detector (H30b)
+# ---------------------------------------------------------------------------
+
+def _detect_box_corrected(
+    highs: np.ndarray,
+    lows: np.ndarray,
+    closes: np.ndarray,
+    direction: Literal["long", "short"],
+    *,
+    prominence_frac: float,
+    distance: int,
+    t_endpoint: TEndpoint,
+    max_length: Optional[int],
+) -> list[BoxPattern]:
+    """Single-candidate-at-a-time implementation.
+
+    Design choice (load-bearing, vs the brief's "concurrent candidates,
+    first to trigger wins" simplest-impl suggestion): we prefer the EARLIEST
+    candidate. Concurrent candidates from intermediate ``find_peaks``-
+    identified troughs are NOT spawned while an active candidate is running
+    its impulse — they would otherwise trigger earlier (with a higher
+    retrace level relative to their later P0) and steal the box from the
+    deeper, structurally meaningful P0. That is exactly the failure mode
+    Dr. A's 2008 DXY example calls out (P0 = Sep '08 swing low, dominant
+    peak ~88), and matches his stated intent: "P1 must be the highest
+    high reached between P0 and the bar where price first retraces 50% of
+    the running impulse."
+
+    New P0 candidates only spawn (a) at find_peaks-identified troughs strictly
+    after the current candidate is dropped (invalidation, abandonment, or
+    box completion at P3); or (b) at the bar where invalidation fires
+    (low < P0_price for LONG, mirror for SHORT) — the new lower low
+    becomes the next P0 immediately.
     """
     n = len(closes)
     if n < 2 * distance + 1:
@@ -173,40 +242,176 @@ def detect_box_numpy(
     trough_idx, peak_idx = _swings(closes, highs, lows,
                                    prominence_frac=prominence_frac,
                                    distance=distance)
-    boxes: list[BoxPattern] = []
+    cap = max_length if max_length is not None else 10**9
 
     if direction == "long":
-        p0_pool = trough_idx
-        p1_pool = peak_idx
-        p0_prices = lows           # P0 anchored on the LOW of the trough bar
-        p1_prices = highs          # P1 anchored on the HIGH of the peak bar
+        p0_seed = sorted(int(x) for x in trough_idx)
+        def p0_price_at(i): return float(lows[i])
+        def running_at(i):  return float(highs[i])
+        def is_better(new, cur): return new > cur
+        def retrace(p0p, re): return re - 0.5 * (re - p0p)
+        def retrace_hit(i, level): return lows[i] <= level
+        def invalidated(i, p0p): return lows[i] < p0p
+        def p2_price_at(i): return float(lows[i])
+        def p3_price_at(j): return float(highs[j])
+        def find_p3(p0i, start, p1p):
+            end = min(n, p0i + cap + 1)
+            for j in range(start, end):
+                if highs[j] > p1p:
+                    return j
+            return None
     else:
-        p0_pool = peak_idx
-        p1_pool = trough_idx
-        p0_prices = highs
-        p1_prices = lows
+        p0_seed = sorted(int(x) for x in peak_idx)
+        def p0_price_at(i): return float(highs[i])
+        def running_at(i):  return float(lows[i])
+        def is_better(new, cur): return new < cur
+        def retrace(p0p, re): return re + 0.5 * (p0p - re)
+        def retrace_hit(i, level): return highs[i] >= level
+        def invalidated(i, p0p): return highs[i] > p0p
+        def p2_price_at(i): return float(highs[i])
+        def p3_price_at(j): return float(lows[j])
+        def find_p3(p0i, start, p1p):
+            end = min(n, p0i + cap + 1)
+            for j in range(start, end):
+                if lows[j] < p1p:
+                    return j
+            return None
 
+    boxes: list[BoxPattern] = []
+    last_p3 = -1
+
+    def next_seed_after(idx: int) -> Optional[int]:
+        for s in p0_seed:
+            if s > idx:
+                return s
+        return None
+
+    def emit_box(p0_idx: int, p0p: float, p1_idx: int, p1p: float,
+                  p2_idx: int, p3_idx: int) -> bool:
+        length = p3_idx - p0_idx
+        if length > cap:
+            return False
+        height = abs(p1p - p0p)
+        if height <= 0:
+            return False
+        p2p = p2_price_at(p2_idx)
+        t_mid = ((p0_idx + p2_idx) / 2.0) if t_endpoint == "p2" \
+                else ((p0_idx + p3_idx) / 2.0)
+        if p1_idx > t_mid:
+            asym: Literal["bullish", "bearish", "neutral"] = "bullish"
+        elif p1_idx < t_mid:
+            asym = "bearish"
+        else:
+            asym = "neutral"
+        aligned = (
+            (direction == "long" and asym == "bullish") or
+            (direction == "short" and asym == "bearish")
+        )
+        boxes.append(BoxPattern(
+            direction=direction,
+            p0_idx=int(p0_idx), p0_price=p0p,
+            p1_idx=int(p1_idx), p1_price=p1p,
+            p2_idx=int(p2_idx), p2_price=p2p,
+            p3_idx=int(p3_idx), p3_price=p3_price_at(p3_idx),
+            height=height, length=length, t_mid=t_mid,
+            asymmetry=asym, trade_aligned=aligned,
+        ))
+        return True
+
+    # Start scanning from the first find_peaks trough/peak after last_p3.
+    cand_p0_idx: Optional[int] = next_seed_after(last_p3)
+    while cand_p0_idx is not None and cand_p0_idx < n:
+        p0_idx = cand_p0_idx
+        p0p = p0_price_at(p0_idx)
+        re_idx = p0_idx
+        re_price = running_at(p0_idx)
+        triggered = False
+        respawned: Optional[int] = None
+        i = p0_idx + 1
+        while i < n:
+            if (i - p0_idx) > cap:
+                break  # abandon, look for next seed past this candidate
+            current = running_at(i)
+            if is_better(current, re_price):
+                re_price = current
+                re_idx = i
+                i += 1
+                continue
+            # Invalidation check FIRST (per spec wording: "before the 50% retrace triggers")
+            if invalidated(i, p0p):
+                respawned = i  # respawn at this bar (new lower low / higher high)
+                break
+            # 50% retrace check
+            level = retrace(p0p, re_price)
+            if retrace_hit(i, level):
+                p3_idx = find_p3(p0_idx, i + 1, re_price)
+                if p3_idx is None:
+                    # No P3 within cap → abandon
+                    break
+                if emit_box(p0_idx, p0p, re_idx, re_price, i, p3_idx):
+                    last_p3 = p3_idx
+                    triggered = True
+                # In either case (emit OR cap-reject) this candidate is done.
+                break
+            i += 1
+
+        # Decide next candidate
+        if triggered:
+            cand_p0_idx = next_seed_after(last_p3)
+        elif respawned is not None:
+            # New P0 immediately at the invalidation bar
+            cand_p0_idx = respawned
+        else:
+            # Abandoned (no trigger, no invalidation) — try next find_peaks seed
+            cand_p0_idx = next_seed_after(p0_idx)
+    return boxes
+
+
+# ---------------------------------------------------------------------------
+# Legacy detector (H29 / H30a) — preserved for reproducibility (`legacy=True`)
+# ---------------------------------------------------------------------------
+
+def _detect_box_legacy(
+    highs: np.ndarray,
+    lows: np.ndarray,
+    closes: np.ndarray,
+    direction: Literal["long", "short"],
+    *,
+    prominence_frac: float,
+    distance: int,
+    t_endpoint: TEndpoint,
+    max_length: Optional[int],
+) -> list[BoxPattern]:
+    n = len(closes)
+    if n < 2 * distance + 1:
+        return []
+    trough_idx, peak_idx = _swings(closes, highs, lows,
+                                   prominence_frac=prominence_frac,
+                                   distance=distance)
+    boxes: list[BoxPattern] = []
+    if direction == "long":
+        p0_pool = trough_idx; p1_pool = peak_idx
+        p0_prices = lows;     p1_prices = highs
+    else:
+        p0_pool = peak_idx;   p1_pool = trough_idx
+        p0_prices = highs;    p1_prices = lows
     last_p3 = -1
     for p0 in p0_pool:
         if p0 <= last_p3:
-            continue                # dedup rule (#3): need a new P0 after P3
-        # P1 = first p1 in p1_pool AFTER p0
+            continue
         next_p1 = p1_pool[p1_pool > p0]
         if len(next_p1) == 0:
             continue
         p1 = int(next_p1[0])
-        p0p = float(p0_prices[p0])
-        p1p = float(p1_prices[p1])
+        p0p = float(p0_prices[p0]); p1p = float(p1_prices[p1])
         if direction == "long":
-            if p1p <= p0p:          # height must be positive
+            if p1p <= p0p:
                 continue
             mid_level = p0p + 0.5 * (p1p - p0p)
         else:
             if p1p >= p0p:
                 continue
-            mid_level = p0p + 0.5 * (p1p - p0p)   # = p0p − 0.5·|height|
-
-        # P2 = first bar AFTER p1 whose extreme crosses the 50% level
+            mid_level = p0p + 0.5 * (p1p - p0p)
         p2: Optional[int] = None
         for i in range(p1 + 1, n):
             if direction == "long":
@@ -217,8 +422,6 @@ def detect_box_numpy(
                     p2 = i; break
         if p2 is None:
             continue
-
-        # P3 = first bar AFTER p2 whose extreme exceeds p1
         p3: Optional[int] = None
         for j in range(p2 + 1, n):
             if direction == "long":
@@ -229,11 +432,8 @@ def detect_box_numpy(
                     p3 = j; break
         if p3 is None:
             continue
-
-        height = abs(p1p - p0p)
-        length = p3 - p0
+        height = abs(p1p - p0p); length = p3 - p0
         if max_length is not None and length > max_length:
-            # H30 cap: skip the mega-box artifact entirely (no record kept).
             continue
         t_mid = ((p0 + p2) / 2.0) if t_endpoint == "p2" else ((p0 + p3) / 2.0)
         if p1 > t_mid:
@@ -242,12 +442,12 @@ def detect_box_numpy(
             asymmetry = "bearish"
         else:
             asymmetry = "neutral"
-        trade_aligned = (direction == "long" and asymmetry == "bullish") or \
-                        (direction == "short" and asymmetry == "bearish")
-
+        trade_aligned = (
+            (direction == "long" and asymmetry == "bullish") or
+            (direction == "short" and asymmetry == "bearish")
+        )
         p2_price = float(lows[p2] if direction == "long" else highs[p2])
         p3_price = float(highs[p3] if direction == "long" else lows[p3])
-
         boxes.append(BoxPattern(
             direction=direction, p0_idx=int(p0), p0_price=p0p,
             p1_idx=int(p1), p1_price=p1p,
@@ -272,6 +472,7 @@ def detect_boxes_df(
     distance: int = DISTANCE_BARS,
     t_endpoint: TEndpoint = "p2",
     max_length: Optional[int] = MAX_LENGTH_BARS,
+    legacy: bool = False,
     high_col: str = "high",
     low_col: str = "low",
     close_col: str = "close",
@@ -280,7 +481,7 @@ def detect_boxes_df(
         df[high_col].to_numpy(), df[low_col].to_numpy(),
         df[close_col].to_numpy(), direction=direction,
         prominence_frac=prominence_frac, distance=distance,
-        t_endpoint=t_endpoint, max_length=max_length,
+        t_endpoint=t_endpoint, max_length=max_length, legacy=legacy,
     )
 
 

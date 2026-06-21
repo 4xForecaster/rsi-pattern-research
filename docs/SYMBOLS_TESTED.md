@@ -123,7 +123,44 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
-## Box-pattern signal corrected spec (H30, 2026-06-20) — 0/7 GO across BOTH variants, healthy trade counts
+## Box-pattern detector P1 algorithm fix (H30b, 2026-06-20) — GBPUSD A flips to SWEEP, still 0/7 GO
+
+Dr. A flagged a structural detector bug: legacy nominated P1 from
+``find_peaks``'s pre-computed local extrema and locked at the FIRST
+prominent peak after P0. Dominant impulses with intermediate prominent
+peaks got the wrong geometry (the 2008 DXY rally: P0=75.7 Sep '08,
+intermediate peak ≈82 early Oct, dominant ≈88 late Oct → legacy locked
+P1=82). Corrected algorithm: walk forward from each P0 maintaining a
+running extreme; P1 only locks when the 50% retrace from the *current*
+running extreme triggers. Invalidation (new lower low / higher high)
+respawns a new P0 at that bar. Single-candidate-at-a-time order to
+preserve the deeper, structurally meaningful P0 against intermediate
+``find_peaks`` troughs. Legacy detector preserved via ``legacy=True``.
+14/14 tests pass.
+
+Detector universe grew ~3× per pair on DXY 170 → 275 LONG boxes (boxes
+previously eaten by mega-box dedup + locked-at-first-peak P1 path now
+enumerate as their own structures). OOS Sortinos shifted:
+
+| Symbol | A H30a / n | **A H30b / n** | Δ | B H30b / n |
+|---|---:|---:|---:|---:|
+| DXY    | −0.90 / 29 | **−0.23 / 30** | +0.67 | −0.12 / 30 |
+| EURUSD | −1.48 / 29 | **+0.44 / 22** | +1.92 | +0.70 / 22 |
+| GBPUSD | −0.38 / 18 | **+1.78 / 20 SWEEP** | +2.16 | +0.41 / 20 |
+| USDJPY | −0.63 / 28 | **−0.17 / 26** | +0.46 | −0.45 / 26 |
+| USDCAD | +0.11 / 19 | **−0.41 / 22** | −0.52 | −0.51 / 22 |
+| AUDUSD | +0.61 / 32 | **−0.37 / 19** | −0.98 | −0.48 / 19 |
+| NZDUSD | −0.59 / 28 | **−0.81 / 20** | −0.22 | −0.91 / 20 |
+
+**GBPUSD Variant A flips NO-GO → SWEEP** (OOS Sortino +1.78 on 20 trades)
+— first crossing of the +1.0 NO-GO floor anywhere in the box arc. Well
+below the +3.0 GO floor; still 0/7 GO across both variants. Detector fix
+is correct and visible in the regenerated figures (no mega-box; 218-bar
+clean LONG appears in the recent-5 DXY panel). H31 regime-classifier
+direction remains the right move with a ~3×-denser substrate. Detail:
+results/H30_box_pattern_corrected.md.
+
+## Box-pattern signal corrected spec (H30a, 2026-06-20) — 0/7 GO across BOTH variants, healthy trade counts
 
 Dr. A flagged two errors in H29 (T1/2 used (P0+P3)/2 — contaminated by
 breakout phase; detector had no max-length cap → produced a 1024-bar

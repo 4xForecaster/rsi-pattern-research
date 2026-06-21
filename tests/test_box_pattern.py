@@ -202,6 +202,192 @@ def test_box_to_trade_variant_A_terminates_at_T2_not_T3():
         f"expected terminal exit at T2 (last target), got {trade.exit_reason}")
 
 
+def _synth_long_moderate_pullback_then_higher_peak():
+    """LONG: P0 deep trough at idx 5 (low 92). Rally to a prominent peak at
+    idx 30 (high 110). MODERATE pullback to idx 35 (low 107) — deep enough
+    that find_peaks identifies the trough at 35 as a candidate P0 (legacy
+    will then move P0 to that), but the pullback bottom 107 is well above
+    the 50%-retrace level (101) so the corrected detector's running-max
+    keeps extending. Continue rally to dominant peak idx 50 (high 115).
+    Then pullback past the dominant-peak retrace level (103.5) at idx 60.
+    P3 break above 115 by idx 75.
+
+    Expected divergence:
+      LEGACY  P0=35 (intermediate trough; legacy abandoned P0=5 because
+              mid_level=101 was never hit), P1=50.
+      CORRECTED single-candidate from P0=5: running_max keeps walking past
+              110 to 115; retrace from 115 fires at idx 60. P0=5, P1=50.
+    Same P1 but DIFFERENT P0 — the corrected detector preserves the deeper,
+    structurally meaningful P0 instead of jumping to a sub-impulse."""
+    n = 90
+    rng = np.random.RandomState(11)
+    base = 100 + rng.normal(0, 0.05, n)
+    highs = base + 0.3; lows = base - 0.3; closes = base.copy()
+    lows[5] = 92.0; highs[5] = 92.5; closes[5] = 92.3
+    for i, v in enumerate(np.linspace(92.3, 110.0, 26)):
+        highs[5 + i] = v + 0.3; lows[5 + i] = v - 0.3; closes[5 + i] = v
+    highs[30] = 110.5; lows[30] = 109.5; closes[30] = 110.0
+    # Moderate pullback to idx 35 (low 107) — find_peaks IDENTIFIES this
+    # trough (prominence 3 ≫ 0.52 threshold) BUT the pullback bottom 107
+    # is above the 50% level (=101) so neither legacy nor corrected
+    # triggers P2 from the intermediate peak.
+    for i, v in enumerate(np.linspace(110.0, 107.0, 6)):
+        highs[30 + i] = v + 0.3; lows[30 + i] = v - 0.3; closes[30 + i] = v
+    # Continue rally to dominant peak at idx 50 (115)
+    for i, v in enumerate(np.linspace(107.0, 115.0, 16)):
+        highs[35 + i] = v + 0.3; lows[35 + i] = v - 0.3; closes[35 + i] = v
+    highs[50] = 115.5; lows[50] = 114.5; closes[50] = 115.0
+    # Pullback past 50% from dominant (level = 115 − 0.5·(115−92) = 103.5)
+    for i, v in enumerate(np.linspace(115.0, 103.0, 11)):
+        highs[50 + i] = v + 0.3; lows[50 + i] = v - 0.3; closes[50 + i] = v
+    lows[60] = 103.0; highs[60] = 103.6; closes[60] = 103.3
+    for i, v in enumerate(np.linspace(103.3, 117.0, 16)):
+        highs[60 + i] = v + 0.3; lows[60 + i] = v - 0.3; closes[60 + i] = v
+    highs[75] = 117.5; lows[75] = 116.5; closes[75] = 117.0
+    return _df(highs.tolist(), lows.tolist(), closes.tolist())
+
+
+def test_corrected_detector_preserves_deep_p0_when_legacy_jumps_to_intermediate():
+    """H30b core fix: with an intermediate-trough find_peaks candidate
+    between the deep P0 and the dominant peak, the corrected single-
+    candidate detector preserves the deep P0 (idx 5) while the legacy
+    detector — which gives up on P0=5 because the intermediate peak's
+    mid_level isn't pierced — jumps to the intermediate trough as its
+    new P0. Both detectors land on the same P1 (the dominant peak), but
+    the corrected box's P0 is the structurally meaningful one."""
+    df = _synth_long_moderate_pullback_then_higher_peak()
+    corrected = bp.detect_boxes_df(df, "long")
+    legacy = bp.detect_boxes_df(df, "long", legacy=True)
+    assert len(corrected) >= 1
+    bc = corrected[0]
+    assert bc.p0_idx <= 6, (
+        f"corrected detector dropped the deep P0=5: got p0_idx={bc.p0_idx}")
+    assert bc.p1_idx >= 45 and bc.p1_price > 113
+    assert len(legacy) >= 1
+    bl = legacy[0]
+    assert bl.p0_idx > bc.p0_idx, (
+        f"legacy was expected to advance P0 past the deep candidate: "
+        f"got legacy p0_idx={bl.p0_idx}, corrected p0_idx={bc.p0_idx}")
+
+
+def _synth_long_p0_invalidated_by_sharp_drop():
+    """LONG: P0 candidate at idx 5 (low 95) rallies to idx 20 (high 100).
+    Idx 21 prints a SHARP single-bar drop (high 92, low 89) — low < P0_price,
+    invalidating the candidate. (Sharp because a gradual decline would cross
+    the 50%-retrace level first and fire retrace instead of invalidation.)
+    A new candidate spawns at idx 21 (p0=89); the rally to idx 60 (high 115)
+    and pullback to idx 70 (~102) complete the box. The resulting box's
+    p0_idx must be 21, not 5."""
+    n = 100
+    rng = np.random.RandomState(13)
+    base = 100 + rng.normal(0, 0.05, n)
+    highs = base + 0.3; lows = base - 0.3; closes = base.copy()
+    # Initial swing low at idx 5
+    lows[5] = 95.0; highs[5] = 95.5; closes[5] = 95.3
+    # Smooth rally to idx 20 — running_max walks to 100, no retrace yet
+    for i, v in enumerate(np.linspace(95.3, 100.0, 16)):
+        highs[5 + i] = v + 0.3; lows[5 + i] = v - 0.3; closes[5 + i] = v
+    highs[20] = 100.5; lows[20] = 99.5; closes[20] = 100.0
+    # SHARP single-bar drop at idx 21 — high 92 (< running_max 100, no
+    # running_max update), low 89 (< P0_price 95, INVALIDATES candidate).
+    # This skips over the 50%-retrace level (~97.5) entirely in one bar.
+    highs[21] = 92.0; lows[21] = 89.0; closes[21] = 89.5
+    # New candidate at idx 21 (p0_price=89) rallies cleanly to idx 60
+    for i, v in enumerate(np.linspace(89.5, 115.0, 40)):
+        highs[21 + i] = v + 0.3; lows[21 + i] = v - 0.3; closes[21 + i] = v
+    highs[60] = 115.5; lows[60] = 114.5; closes[60] = 115.0
+    # Pullback past 50% retrace from new running_max=115, p0=89 → level=102
+    for i, v in enumerate(np.linspace(115.0, 101.5, 11)):
+        highs[60 + i] = v + 0.3; lows[60 + i] = v - 0.3; closes[60 + i] = v
+    lows[70] = 101.5; highs[70] = 102.5; closes[70] = 102.0
+    # P3 break above 115 by idx 85
+    for i, v in enumerate(np.linspace(102.0, 117.0, 16)):
+        highs[70 + i] = v + 0.3; lows[70 + i] = v - 0.3; closes[70 + i] = v
+    highs[85] = 117.5; lows[85] = 116.5; closes[85] = 117.0
+    return _df(highs.tolist(), lows.tolist(), closes.tolist())
+
+
+def test_corrected_detector_invalidates_old_p0_when_deeper_low_forms():
+    """Corrected detector: a single-bar drop whose low pierces the previous
+    P0 must invalidate that candidate and respawn a new one at the current
+    bar. The resulting box's p0_idx must be at the invalidation bar (21),
+    not the original idx 5."""
+    df = _synth_long_p0_invalidated_by_sharp_drop()
+    boxes = bp.detect_boxes_df(df, "long")
+    assert len(boxes) >= 1, (
+        "corrected detector should still produce a box from the respawned P0")
+    b = boxes[0]
+    assert b.p0_idx >= 21, (
+        f"detector kept the original P0 instead of invalidating: "
+        f"got p0_idx={b.p0_idx}, expected ≥21 (after the sharp drop)")
+    # P0_price must reflect the new lower low (≈89), not the original 95
+    assert b.p0_price < 90, (
+        f"p0_price={b.p0_price} suggests the original P0 was kept")
+    # P1 is the dominant peak around idx 60 (running max from new P0)
+    assert b.p1_idx >= 55 and b.p1_price > 113
+
+
+def _synth_short_moderate_bounce_then_lower_trough():
+    """SHORT mirror: P0 swing high idx 5 (108). Decline to intermediate
+    low idx 30 (90). MODERATE bounce to idx 35 (93) — deep enough that
+    find_peaks identifies the peak, but well below the 50% bounce level
+    (=99). Continue decline to dominant low idx 50 (85). Bounce past 96.5
+    at idx 60. P3 break below 85 at idx 75."""
+    n = 90
+    rng = np.random.RandomState(14)
+    base = 100 + rng.normal(0, 0.05, n)
+    highs = base + 0.3; lows = base - 0.3; closes = base.copy()
+    highs[5] = 108.0; lows[5] = 107.5; closes[5] = 107.8
+    for i, v in enumerate(np.linspace(107.8, 90.0, 26)):
+        highs[5 + i] = v + 0.3; lows[5 + i] = v - 0.3; closes[5 + i] = v
+    lows[30] = 89.5; highs[30] = 90.5; closes[30] = 90.0
+    # Moderate bounce to 93 by idx 35 — find_peaks marks the peak
+    for i, v in enumerate(np.linspace(90.0, 93.0, 6)):
+        highs[30 + i] = v + 0.3; lows[30 + i] = v - 0.3; closes[30 + i] = v
+    # Continue decline to dominant low at idx 50 (85)
+    for i, v in enumerate(np.linspace(93.0, 85.0, 16)):
+        highs[35 + i] = v + 0.3; lows[35 + i] = v - 0.3; closes[35 + i] = v
+    lows[50] = 84.5; highs[50] = 85.5; closes[50] = 85.0
+    # Bounce past 50% level (96.5) at idx 60
+    for i, v in enumerate(np.linspace(85.0, 97.0, 11)):
+        highs[50 + i] = v + 0.3; lows[50 + i] = v - 0.3; closes[50 + i] = v
+    highs[60] = 97.0; lows[60] = 96.4; closes[60] = 96.7
+    for i, v in enumerate(np.linspace(96.7, 83.0, 16)):
+        highs[60 + i] = v + 0.3; lows[60 + i] = v - 0.3; closes[60 + i] = v
+    lows[75] = 82.5; highs[75] = 83.5; closes[75] = 83.0
+    return _df(highs.tolist(), lows.tolist(), closes.tolist())
+
+
+def test_corrected_detector_short_preserves_deep_p0():
+    """SHORT mirror — corrected preserves the deep P0; legacy advances to
+    the intermediate peak."""
+    df = _synth_short_moderate_bounce_then_lower_trough()
+    corrected = bp.detect_boxes_df(df, "short")
+    legacy = bp.detect_boxes_df(df, "short", legacy=True)
+    assert len(corrected) >= 1
+    bc = corrected[0]
+    assert bc.p0_idx <= 6
+    assert bc.p1_idx >= 45 and bc.p1_price < 87
+    assert len(legacy) >= 1
+    assert legacy[0].p0_idx > bc.p0_idx
+
+
+def test_legacy_flag_round_trips():
+    """``legacy=True`` exercises the H29/H30a code path. On the moderate-
+    pullback fixture they diverge; on the clean H29 fixture they agree."""
+    df = _synth_long_moderate_pullback_then_higher_peak()
+    new = bp.detect_boxes_df(df, "long", legacy=False)
+    leg = bp.detect_boxes_df(df, "long", legacy=True)
+    assert len(new) >= 1 and len(leg) >= 1
+    assert new[0].p0_idx != leg[0].p0_idx
+    # On the clean H29 fixture (no intermediate peak/trough) both agree
+    df2 = _synth_long_box_bullish_asym()
+    leg2 = bp.detect_boxes_df(df2, "long", legacy=True)
+    new2 = bp.detect_boxes_df(df2, "long", legacy=False)
+    assert len(leg2) >= 1 and len(new2) >= 1
+    assert leg2[0].p1_idx == new2[0].p1_idx
+
+
 def test_box_to_trade_variant_A_trail_anchored_on_p2():
     """Variant A's trail-activation price must be P2 ± 2.200·height
     (NOT entry ± factor·range_size). Build a series where stop never fires,
@@ -271,11 +457,14 @@ def test_max_length_cap_drops_mega_boxes():
         highs[200 + i] = val + 0.3; lows[200 + i] = val - 0.3; closes[200 + i] = val
     highs[310] = 111.0; lows[310] = 110.4; closes[310] = 110.6
     df = _df(highs.tolist(), lows.tolist(), closes.tolist())
-    # default cap drops it
-    assert len(bp.detect_boxes_df(df, "long")) == 0
-    # explicit cap of 350 lets it through
+    # default cap drops the mega-box; any unrelated noise-tail box must
+    # NOT have length anywhere near the mega-box's 305 bars.
+    capped = bp.detect_boxes_df(df, "long")
+    assert all(b.length <= 250 for b in capped), (
+        f"a box exceeded the default 250-bar cap: lengths={[b.length for b in capped]}")
+    # explicit cap of 350 lets the mega-box through
     boxes = bp.detect_boxes_df(df, "long", max_length=350)
     assert any(b.length > 250 for b in boxes)
     # disabling cap (None) also lets it through
     boxes_none = bp.detect_boxes_df(df, "long", max_length=None)
-    assert len(boxes_none) >= 1
+    assert any(b.length > 250 for b in boxes_none)

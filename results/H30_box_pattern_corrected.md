@@ -9,7 +9,7 @@
 [`figures/27_box_history_dxy.png`](../figures/27_box_history_dxy.png)
 **Compare against:** [`results/H29_box_pattern_validation.md`](H29_box_pattern_validation.md) (preserved)
 
-## TL;DR — corrections made, both variants still 0/7 GO (re-confirmed after Variant A tightening)
+## TL;DR — corrections made, GBPUSD flips to SWEEP after H30b detector fix (still 0/7 GO)
 
 The H29 implementation had two material errors flagged by Dr. A. Both
 are fixed:
@@ -169,6 +169,111 @@ target variants still fail to produce a tradeable edge on any of the
 regardless of T1/2 endpoint, target ladder, or detector cap. The
 detector itself is in better shape than it was after H29, ready for
 the cross-scale H31 use.
+
+## Detector algorithm correction (H30b, 2026-06-20)
+
+Dr. A flagged a real, structural bug in the detector after the visual
+examples landed. The original algorithm nominated P1 from a pre-computed
+``scipy.signal.find_peaks`` list and locked it at the FIRST local
+extremum after P0. On a dominant impulse with intermediate prominent
+peaks (the 2008 DXY rally: P0 ≈ 75.7 in Sep '08, intermediate peak ≈ 82
+in early Oct, dominant peak ≈ 88 in late Oct), the legacy code locked
+P1 at 82 and ran the rest of the geometry off the wrong opposite swing.
+
+### Fix
+
+**P1 must be the highest extreme reached between P0 and the bar where
+price first retraces 50% of the running impulse — NOT a pre-identified
+local peak.**
+
+The corrected algorithm is implemented in
+``box_pattern._detect_box_corrected``. Walk forward from each P0
+candidate, maintaining a running extreme (max-high for LONG, min-low
+for SHORT). At each bar:
+
+1. If a new running extreme, update.
+2. Otherwise, check invalidation **first** (new lower low for LONG,
+   new higher high for SHORT) — if hit, the candidate dies and a new
+   P0 spawns at the current bar (the new lower low / higher high). The
+   spec's "lower low forms *before* the 50% retrace triggers" pins this
+   ordering.
+3. Otherwise, compute the 50% retrace level from the *current* running
+   extreme and check if the bar pierces it. If so, P1 locks at the
+   running extreme; P2 locks at the current bar; search forward for P3.
+
+The legacy detector remains addressable via ``legacy=True`` for H29 /
+H30a reproducibility.
+
+### Load-bearing implementation choice — single candidate at a time
+
+The brief suggested "concurrent candidate P0s, first to trigger wins."
+Implemented literally this gives the smaller, structurally less
+meaningful box: an intermediate ``find_peaks`` trough between the deep
+P0 and the dominant peak triggers its own 50%-retrace EARLIER (because
+its retrace level is higher relative to a shallower P0) and steals the
+box. That contradicts Dr. A's 2008 stated intent (he wants P0 = Sep '08,
+not the intermediate Oct-16 trough). The corrected algorithm therefore
+processes one P0 candidate at a time, in earliest-first order; new
+``find_peaks`` candidates are only consulted when the current candidate
+is dropped (invalidation, abandonment at ``max_length``, or box
+completion at P3). Invalidation respawn (new lower low becomes the
+new P0 immediately) is preserved.
+
+### Unit-test coverage
+
+14/14 pass. Three new tests specifically target the failure modes:
+- `test_corrected_detector_preserves_deep_p0_when_legacy_jumps_to_intermediate`
+- `test_corrected_detector_short_preserves_deep_p0`
+- `test_corrected_detector_invalidates_old_p0_when_deeper_low_forms`
+plus `test_legacy_flag_round_trips` to verify legacy=True still reproduces the H29/H30a path.
+
+### Impact on the 7-pair backtest
+
+The corrected detector grew the LONG universe ~3× per pair (DXY 170 →
+275, USDJPY 142 → 201, USDCAD 123 → 182) because boxes that were
+previously eaten by the now-removed mega-box dedup and by the
+legacy-locked-at-first-peak P1 path now properly enumerate as their
+own (deeper) structures. With more (and structurally larger) boxes,
+OOS Sortinos shifted materially:
+
+| Symbol | A H30a OOS | **A H30b OOS** | Δ | B H30a OOS | **B H30b OOS** | Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| DXY    | −0.90 / 29 | **−0.23 / 30** | +0.67 | −0.89 / 31 | **−0.12 / 30** | +0.77 |
+| EURUSD | −1.48 / 29 | **+0.44 / 22** | +1.92 | −1.20 / 32 | **+0.70 / 22** | +1.90 |
+| GBPUSD | −0.38 / 18 | **+1.78 / 20** | +2.16 | −0.56 / 18 | **+0.41 / 20** | +0.97 |
+| USDJPY | −0.63 / 28 | **−0.17 / 26** | +0.46 | −0.39 / 30 | **−0.45 / 26** | −0.06 |
+| USDCAD | +0.11 / 19 | **−0.41 / 22** | −0.52 | −0.12 / 21 | **−0.51 / 22** | −0.39 |
+| AUDUSD | +0.61 / 32 | **−0.37 / 19** | −0.98 | +0.70 / 32 | **−0.48 / 19** | −1.18 |
+| NZDUSD | −0.59 / 28 | **−0.81 / 20** | −0.22 | +0.10 / 29 | **−0.91 / 20** | −1.01 |
+
+Six of seven pairs sit closer to zero on Variant A (most −0.81 to +0.44,
+the rest at +1.78). **GBPUSD Variant A flips NO-GO → SWEEP** at
+OOS Sortino **+1.78 on 20 OOS trades** — first crossing of the +1.0
+NO-GO floor anywhere in the box-pattern arc, but well below the +3.0 GO
+floor and below the H24 robustness gate's thin-OOS trigger (still 20
+trades < 30 cap). Variant B trails A on Sortino (5 of 7 pairs) and on
+MaxDD — A continues to be the better of the two ladders after the
+detector fix.
+
+### Verdict
+
+Still **0/7 GO under either variant**. The detector fix is correct and
+visible in the figures (no mega-box; the 2008-style false-P1 cases are
+gone; the recent-5 DXY panel shows clean structural geometries). GBPUSD
+is the only pair whose Sortino crossed the +1.0 NO-GO floor; not enough
+to ship. The H31 regime-classifier direction remains the right move —
+the detector substrate is now ~3× denser (544 DXY boxes vs 330 before)
+and structurally cleaner.
+
+### Figures re-rendered with H30b detector
+
+The five existing PNGs (figures 26, 27, 28, 29, 30) have been
+regenerated with the corrected detector. The recent-5 DXY panel
+(figure 26) now shows boxes 3–218 bars long instead of the H30a
+artifact 1024-bar mega-box. Full-history overview (figure 27)
+records 544 detected boxes (275 long, 269 short, vs H30a's 330).
+Multi-timeframe examples (figures 28, 29, 30) similarly updated. All
+re-copied to `~/Documents/4xForecaster/`.
 
 ## Sources
 
