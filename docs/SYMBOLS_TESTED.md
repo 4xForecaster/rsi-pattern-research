@@ -123,6 +123,49 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## Box chaining and reversal (H30c, 2026-06-20) — DXY OOS Sortino +3.34 at N≥2 (SWEEP only because 17<30 trades)
+
+Dr. A extended the rule with same-direction chaining (P0 of box-N+1 = P2
+of box-N) and reversal detection (opposite-direction box anchored at the
+chain's terminal extreme ends the chain). Implemented in
+`_detect_box_chained`, wired via `detect_boxes_df(chain_mode=True)`.
+After each box confirms, a continuation candidate races a reversal
+candidate; first to confirm wins. 18/18 unit tests pass (4 new).
+
+Chain-conditional backtest (`scripts/h30c_chain_conditional.py`):
+trade only when chain_index ≥ K for K ∈ {0, 1, 2} corresponding to
+N≥1, N≥2, N≥3.
+
+| Sym | H30b OOS | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---|---|---|
+| DXY    | −0.23 / 30 | **+2.14 / 43** | **+3.34 / 17** SWEEP | +0.12 / 7 |
+| EURUSD | +0.44 / 22 | −0.54 / 27 | −0.39 / 16 | −0.35 / 8 |
+| GBPUSD | +1.78 / 20 | +0.50 / 29 | +0.74 / 12 | +1.90 / 4 |
+| USDJPY | −0.17 / 26 | −0.05 / 32 | +0.03 / 21 | **+1.32 / 11** SWEEP |
+| USDCAD | −0.41 / 22 | −0.41 / 21 | −0.86 / 14 | −1.12 / 11 |
+| AUDUSD | −0.37 / 19 | +0.78 / 26 | +0.18 / 19 | +0.37 / 14 |
+| NZDUSD | −0.81 / 20 | −0.69 / 36 | −0.39 / 25 | −0.35 / 18 |
+
+**DXY's response is the cleanest signal of "chain context matters" in
+the whole arc.** OOS Sortino lifts from H30b −0.23 → +3.34 at N≥2 (the
++3.0 GO Sortino floor cleared) but only 17 OOS trades < 30 GO trade
+floor → SWEEP, not GO. The locked rule binds on trade count, not
+Sortino; one more OOS year would likely tip it. USDJPY also lifts at
+N≥3 (+1.32 SWEEP), AUDUSD off the floor at N≥1 (+0.78). GBPUSD
+regresses — its H30b SWEEP was carried by first-of-chain boxes.
+EURUSD/USDCAD/NZDUSD: unmoved NO-GO.
+
+DXY chain shape: 397 boxes in 198 chains; longest chain 3 boxes; 197
+chains start with a reversal. No 5+box continuations in 36 years of
+daily history.
+
+**0 cells GO across (pair × lens).** Three SWEEPs (DXY N≥1, DXY N≥2,
+USDJPY N≥3) — first cells anywhere in the box arc to cross the +1.0
+NO-GO Sortino floor. No hurst-agent change; live cron untouched.
+Standalone H30b detector preserved (chain_mode=False) so H30a/H30b
+results stay reproducible. Detail:
+results/H30_box_pattern_corrected.md § "Box chaining and reversal".
+
 ## Box-pattern detector P1 algorithm fix (H30b, 2026-06-20) — GBPUSD A flips to SWEEP, still 0/7 GO
 
 Dr. A flagged a structural detector bug: legacy nominated P1 from

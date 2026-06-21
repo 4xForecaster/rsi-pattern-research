@@ -388,6 +388,151 @@ def test_legacy_flag_round_trips():
     assert leg2[0].p1_idx == new2[0].p1_idx
 
 
+def _synth_three_box_long_chain_then_short_reversal():
+    """LONG chain of 3 boxes (each P2 becomes the next P0), then a SHORT
+    reversal box anchored at the chain's terminal high. Geometry hand-set
+    so each box clears the 50%-retrace trigger at the right place."""
+    n = 220
+    rng = np.random.RandomState(7)
+    closes = 100 + rng.normal(0, 0.05, n)
+    H = closes + 0.3; L = closes - 0.3
+    def seg(a, b, lo, hi):
+        for i, v in enumerate(np.linspace(lo, hi, b - a + 1)):
+            H[a + i] = v + 0.3; L[a + i] = v - 0.3; closes[a + i] = v
+    # Box 1
+    L[5] = 90.0; H[5] = 90.5; closes[5] = 90.3
+    seg(5, 25, 90.3, 110.0); H[25] = 110.5; L[25] = 109.5; closes[25] = 110.0
+    seg(25, 33, 110.0, 100.0)
+    L[33] = 100.0; H[33] = 100.6; closes[33] = 100.3
+    seg(33, 45, 100.3, 112.0)
+    # Box 2 (continuation from P2_1 = idx 33)
+    seg(45, 65, 112.0, 125.0); H[65] = 125.5; L[65] = 124.5; closes[65] = 125.0
+    seg(65, 75, 125.0, 112.5)
+    L[75] = 112.5; H[75] = 113.1; closes[75] = 112.8
+    seg(75, 90, 112.8, 127.0)
+    # Box 3 (continuation from P2_2 = idx 75)
+    seg(90, 110, 127.0, 140.0); H[110] = 140.5; L[110] = 139.5; closes[110] = 140.0
+    seg(110, 125, 140.0, 126.0)
+    L[125] = 126.0; H[125] = 126.6; closes[125] = 126.3
+    seg(125, 140, 126.3, 142.0)
+    # Chain terminal extends to ~145
+    seg(140, 150, 142.0, 145.0); H[150] = 145.5; L[150] = 144.5; closes[150] = 145.0
+    # SHORT reversal: P0 = chain terminal high. decline → 50% bounce → break below
+    seg(150, 170, 145.0, 130.0); L[170] = 129.5; H[170] = 130.5; closes[170] = 130.0
+    seg(170, 180, 130.0, 138.0); H[180] = 138.0; L[180] = 137.4; closes[180] = 137.7
+    seg(180, 200, 137.7, 128.0); L[200] = 127.5; H[200] = 128.5; closes[200] = 128.0
+    return _df(H.tolist(), L.tolist(), closes.tolist())
+
+
+def test_three_box_long_chain_each_p2_becomes_next_p0():
+    """Chain mode: 3 consecutive same-direction boxes, each P0 equals the
+    previous P2 (the canonical chaining rule)."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    long_chain = [b for b in boxes if b.chain_id == 0 and b.direction == "long"]
+    assert len(long_chain) >= 3, (
+        f"expected ≥3 LONG boxes in chain 0; got {len(long_chain)}")
+    chain_indices = [b.chain_index for b in long_chain[:3]]
+    assert chain_indices == [0, 1, 2], (
+        f"chain_index sequence should be [0,1,2]; got {chain_indices}")
+    # P0 of box-2 must equal P2 of box-1; P0 of box-3 must equal P2 of box-2
+    assert long_chain[1].p0_idx == long_chain[0].p2_idx
+    assert long_chain[2].p0_idx == long_chain[1].p2_idx
+    # P0_price must equal P2_price (same bar, same low)
+    assert abs(long_chain[1].p0_price - long_chain[0].p2_price) < 1e-9
+    assert abs(long_chain[2].p0_price - long_chain[1].p2_price) < 1e-9
+    # reverses_chain_id must be None for continuation boxes
+    assert all(b.reverses_chain_id is None for b in long_chain)
+
+
+def test_long_to_short_reversal_anchored_at_chain_terminal_high():
+    """After the LONG chain, a SHORT reversal box must spawn with P0 ≈ the
+    chain's terminal high and reverses_chain_id pointing to the LONG chain."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    # First SHORT box that follows the LONG chain
+    short_rev = next((b for b in boxes
+                       if b.direction == "short" and b.reverses_chain_id is not None),
+                      None)
+    assert short_rev is not None, "no SHORT reversal box found"
+    assert short_rev.reverses_chain_id == 0
+    assert short_rev.chain_index == 0
+    # P0 should be near the chain's terminal high (we wrote it near idx 150, price ~145)
+    assert 140 <= short_rev.p0_idx <= 160
+    assert short_rev.p0_price > 142, (
+        f"SHORT reversal P0 price {short_rev.p0_price} below the chain "
+        f"terminal high ~145")
+
+
+def _synth_three_box_short_chain_then_long_reversal():
+    """SHORT mirror — 3-box SHORT chain then LONG reversal."""
+    n = 220
+    rng = np.random.RandomState(8)
+    closes = 100 + rng.normal(0, 0.05, n)
+    H = closes + 0.3; L = closes - 0.3
+    def seg(a, b, lo, hi):
+        for i, v in enumerate(np.linspace(lo, hi, b - a + 1)):
+            H[a + i] = v + 0.3; L[a + i] = v - 0.3; closes[a + i] = v
+    # Box 1 SHORT: P0=swing high
+    H[5] = 110.0; L[5] = 109.5; closes[5] = 109.8
+    seg(5, 25, 109.8, 90.0); L[25] = 89.5; H[25] = 90.5; closes[25] = 90.0
+    seg(25, 33, 90.0, 100.0)
+    H[33] = 100.0; L[33] = 99.4; closes[33] = 99.7
+    seg(33, 45, 99.7, 88.0)
+    # Box 2
+    seg(45, 65, 88.0, 75.0); L[65] = 74.5; H[65] = 75.5; closes[65] = 75.0
+    seg(65, 75, 75.0, 87.5)
+    H[75] = 87.5; L[75] = 86.9; closes[75] = 87.2
+    seg(75, 90, 87.2, 73.0)
+    # Box 3
+    seg(90, 110, 73.0, 60.0); L[110] = 59.5; H[110] = 60.5; closes[110] = 60.0
+    seg(110, 125, 60.0, 73.75)
+    H[125] = 73.8; L[125] = 73.2; closes[125] = 73.5
+    seg(125, 140, 73.5, 58.0)
+    # Terminal low extends to ~55
+    seg(140, 150, 58.0, 55.0); L[150] = 54.5; H[150] = 55.5; closes[150] = 55.0
+    # LONG reversal: P0 = chain terminal low. rally → 50% retrace down → break above
+    seg(150, 170, 55.0, 70.0); H[170] = 70.5; L[170] = 69.5; closes[170] = 70.0
+    seg(170, 180, 70.0, 62.5); L[180] = 62.0; H[180] = 62.6; closes[180] = 62.3
+    seg(180, 200, 62.3, 72.0); H[200] = 72.5; L[200] = 71.5; closes[200] = 72.0
+    return _df(H.tolist(), L.tolist(), closes.tolist())
+
+
+def test_short_to_long_reversal_anchored_at_chain_terminal_low():
+    """Mirror of the LONG→SHORT test."""
+    df = _synth_three_box_short_chain_then_long_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    short_chain_0 = [b for b in boxes
+                      if b.chain_id == 0 and b.direction == "short"]
+    assert len(short_chain_0) >= 3, (
+        f"expected ≥3 SHORT boxes in chain 0; got {len(short_chain_0)}")
+    assert [b.chain_index for b in short_chain_0[:3]] == [0, 1, 2]
+    assert short_chain_0[1].p0_idx == short_chain_0[0].p2_idx
+    assert short_chain_0[2].p0_idx == short_chain_0[1].p2_idx
+    long_rev = next((b for b in boxes
+                      if b.direction == "long" and b.reverses_chain_id is not None),
+                     None)
+    assert long_rev is not None
+    assert long_rev.reverses_chain_id == 0
+    assert long_rev.chain_index == 0
+    # P0 should be near the chain terminal low (~55)
+    assert 140 <= long_rev.p0_idx <= 160
+    assert long_rev.p0_price < 58
+
+
+def test_chain_mode_off_returns_no_chain_metadata():
+    """Backwards compatibility: ``chain_mode=False`` (the default) must
+    leave chain_id / chain_index / reverses_chain_id as None on every box,
+    and the box list must match the H30b standalone detector."""
+    df = _synth_long_moderate_pullback_then_higher_peak()
+    boxes = bp.detect_boxes_df(df, "long")
+    assert len(boxes) >= 1
+    for b in boxes:
+        assert b.chain_id is None
+        assert b.chain_index is None
+        assert b.reverses_chain_id is None
+
+
 def test_box_to_trade_variant_A_trail_anchored_on_p2():
     """Variant A's trail-activation price must be P2 ± 2.200·height
     (NOT entry ± factor·range_size). Build a series where stop never fires,

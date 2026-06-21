@@ -79,7 +79,7 @@ Detection is O(n).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as _replace
 from typing import Literal, Optional
 
 import numpy as np
@@ -117,6 +117,11 @@ class BoxPattern:
     t_mid: float
     asymmetry: Literal["bullish", "bearish", "neutral"]
     trade_aligned: bool      # asymmetry matches box direction → take the trade
+    # Chain extension (H30c, 2026-06-20). Populated only by `chain_mode=True`
+    # detection; standalone runs leave these None.
+    chain_id: Optional[int] = None          # monotonic chain identifier
+    chain_index: Optional[int] = None       # 0 = first box of chain, 1 = first continuation, ...
+    reverses_chain_id: Optional[int] = None # if this box reversed a prior chain, that chain's id
 
 
 # ---------------------------------------------------------------------------
@@ -154,9 +159,20 @@ def detect_box_numpy(
     t_endpoint: TEndpoint = "p2",
     max_length: Optional[int] = MAX_LENGTH_BARS,
     legacy: bool = False,
+    chain_mode: bool = False,
 ) -> list[BoxPattern]:
     """One-pass box detector. ``direction='long'`` → P0=trough, P1=peak;
     ``direction='short'`` → P0=peak, P1=trough.
+
+    ``chain_mode=True`` (H30c) returns ALL boxes (both directions) in
+    chain order, each annotated with ``chain_id`` / ``chain_index`` /
+    ``reverses_chain_id``. After a box confirms, a continuation candidate
+    (P0 = previous P2, same direction) and a reversal candidate (P0 = the
+    chain's running terminal extreme, opposite direction) are raced; the
+    first to confirm a P3 wins and either extends the chain (continuation)
+    or ends it and starts a new opposite-direction chain (reversal). The
+    ``direction`` parameter is used ONLY to choose the very first seed
+    direction; the returned list mixes long and short boxes naturally.
 
     H30b (2026-06-20, this revision) — **corrected P1 algorithm**.
 
@@ -188,6 +204,12 @@ def detect_box_numpy(
     additionally abandons P0 candidates whose impulse phase exceeds it.
     Pass ``None`` to disable.
     """
+    if chain_mode:
+        return _detect_box_chained(highs, lows, closes,
+                                    prominence_frac=prominence_frac,
+                                    distance=distance,
+                                    t_endpoint=t_endpoint,
+                                    max_length=max_length)
     if legacy:
         return _detect_box_legacy(highs, lows, closes, direction,
                                    prominence_frac=prominence_frac,
@@ -368,6 +390,348 @@ def _detect_box_corrected(
 
 
 # ---------------------------------------------------------------------------
+# Direction-polymorphic helpers (used by the chained detector)
+# ---------------------------------------------------------------------------
+
+def _running_at(direction: str, highs: np.ndarray, lows: np.ndarray, i: int) -> float:
+    return float(highs[i]) if direction == "long" else float(lows[i])
+
+
+def _is_better(direction: str, new: float, cur: float) -> bool:
+    return new > cur if direction == "long" else new < cur
+
+
+def _p0_price_at(direction: str, highs: np.ndarray, lows: np.ndarray, i: int) -> float:
+    return float(lows[i]) if direction == "long" else float(highs[i])
+
+
+def _p2_price_at(direction: str, highs: np.ndarray, lows: np.ndarray, i: int) -> float:
+    return float(lows[i]) if direction == "long" else float(highs[i])
+
+
+def _p3_price_at(direction: str, highs: np.ndarray, lows: np.ndarray, j: int) -> float:
+    return float(highs[j]) if direction == "long" else float(lows[j])
+
+
+def _invalidates(direction: str, highs: np.ndarray, lows: np.ndarray,
+                 i: int, p0_price: float) -> bool:
+    return lows[i] < p0_price if direction == "long" else highs[i] > p0_price
+
+
+def _retrace_level(direction: str, p0_price: float, re_price: float) -> float:
+    if direction == "long":
+        return re_price - 0.5 * (re_price - p0_price)
+    return re_price + 0.5 * (p0_price - re_price)
+
+
+def _retrace_hit(direction: str, highs: np.ndarray, lows: np.ndarray,
+                 i: int, level: float) -> bool:
+    return lows[i] <= level if direction == "long" else highs[i] >= level
+
+
+def _find_p3(direction: str, highs: np.ndarray, lows: np.ndarray,
+             p0_idx: int, start: int, p1_price: float, cap: int, n: int
+             ) -> Optional[int]:
+    end = min(n, p0_idx + cap + 1)
+    if direction == "long":
+        for j in range(start, end):
+            if highs[j] > p1_price:
+                return j
+    else:
+        for j in range(start, end):
+            if lows[j] < p1_price:
+                return j
+    return None
+
+
+def _build_box(direction: str, p0_idx: int, p0_price: float,
+               p1_idx: int, p1_price: float,
+               p2_idx: int, p2_price: float, p3_idx: int, p3_price: float,
+               *, t_endpoint: TEndpoint, cap: int) -> Optional[BoxPattern]:
+    length = p3_idx - p0_idx
+    if length > cap:
+        return None
+    height = abs(p1_price - p0_price)
+    if height <= 0:
+        return None
+    t_mid = ((p0_idx + p2_idx) / 2.0) if t_endpoint == "p2" \
+            else ((p0_idx + p3_idx) / 2.0)
+    if p1_idx > t_mid:
+        asym: Literal["bullish", "bearish", "neutral"] = "bullish"
+    elif p1_idx < t_mid:
+        asym = "bearish"
+    else:
+        asym = "neutral"
+    aligned = (
+        (direction == "long" and asym == "bullish") or
+        (direction == "short" and asym == "bearish")
+    )
+    return BoxPattern(
+        direction=direction,
+        p0_idx=int(p0_idx), p0_price=p0_price,
+        p1_idx=int(p1_idx), p1_price=p1_price,
+        p2_idx=int(p2_idx), p2_price=p2_price,
+        p3_idx=int(p3_idx), p3_price=p3_price,
+        height=height, length=length, t_mid=t_mid,
+        asymmetry=asym, trade_aligned=aligned,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Chained detector (H30c) — continuation + reversal racing
+# ---------------------------------------------------------------------------
+
+def _walk_first_box(highs: np.ndarray, lows: np.ndarray,
+                     p0_idx: int, direction: str, cap: int,
+                     t_endpoint: TEndpoint, n: int
+                     ) -> Optional[BoxPattern]:
+    """Run the single-candidate walk from one P0 seed. Returns the first
+    confirmed box, or None if abandoned/invalidated without confirming."""
+    p0_price = _p0_price_at(direction, highs, lows, p0_idx)
+    re_idx = p0_idx
+    re_price = _running_at(direction, highs, lows, p0_idx)
+    i = p0_idx + 1
+    while i < n:
+        if (i - p0_idx) > cap:
+            return None
+        current = _running_at(direction, highs, lows, i)
+        if _is_better(direction, current, re_price):
+            re_price = current
+            re_idx = i
+            i += 1
+            continue
+        if _invalidates(direction, highs, lows, i, p0_price):
+            return None  # caller should respawn from next seed (cleaner here)
+        level = _retrace_level(direction, p0_price, re_price)
+        if _retrace_hit(direction, highs, lows, i, level):
+            p3 = _find_p3(direction, highs, lows, p0_idx, i + 1, re_price, cap, n)
+            if p3 is None:
+                return None
+            p2_price = _p2_price_at(direction, highs, lows, i)
+            p3_price = _p3_price_at(direction, highs, lows, p3)
+            return _build_box(direction, p0_idx, p0_price, re_idx, re_price,
+                              i, p2_price, p3, p3_price,
+                              t_endpoint=t_endpoint, cap=cap)
+        i += 1
+    return None
+
+
+def _walk_chain_continuation(
+    highs: np.ndarray, lows: np.ndarray,
+    current_box: BoxPattern,
+    chain_direction: str,
+    chain_terminal_idx: int,
+    chain_terminal_price: float,
+    start_bar: int,
+    cap: int,
+    t_endpoint: TEndpoint,
+    n: int,
+) -> tuple[Optional[BoxPattern], Optional[str], int, float]:
+    """Race the continuation candidate (P0 = current_box.P2, same direction)
+    against the reversal candidate (P0 = chain's running terminal extreme,
+    opposite direction). Returns (next_box, type, new_terminal_idx,
+    new_terminal_price). type ∈ {"cont", "rev"} or None if both abandoned.
+    """
+    cont_dir = chain_direction
+    rev_dir = "short" if cont_dir == "long" else "long"
+
+    cont_p0 = current_box.p2_idx
+    cont_p0_price = current_box.p2_price
+    cont_re_idx = cont_p0
+    cont_re_price = _running_at(cont_dir, highs, lows, cont_p0)
+
+    rev_p0_idx = chain_terminal_idx
+    rev_p0_price = chain_terminal_price
+    rev_re_idx = rev_p0_idx
+    rev_re_price = _running_at(rev_dir, highs, lows, rev_p0_idx)
+
+    term_idx = chain_terminal_idx
+    term_price = chain_terminal_price
+
+    j = start_bar
+    while j < n:
+        cont_alive = (j - cont_p0) <= cap
+        rev_alive = (j - rev_p0_idx) <= cap
+        if not cont_alive and not rev_alive:
+            return None, None, term_idx, term_price
+
+        # Update chain terminal extreme (in chain direction)
+        cur_chain = _running_at(cont_dir, highs, lows, j)
+        if _is_better(cont_dir, cur_chain, term_price):
+            term_price = cur_chain
+            term_idx = j
+            # Reversal P0 follows the chain terminal: respawn rev candidate
+            rev_p0_idx = j
+            rev_p0_price = cur_chain
+            rev_re_idx = j
+            rev_re_price = _running_at(rev_dir, highs, lows, j)
+
+        # ---- Continuation track update ----
+        if cont_alive:
+            cur_cont = _running_at(cont_dir, highs, lows, j)
+            if _is_better(cont_dir, cur_cont, cont_re_price):
+                cont_re_price = cur_cont
+                cont_re_idx = j
+            else:
+                if _invalidates(cont_dir, highs, lows, j, cont_p0_price):
+                    # Respawn cont at this bar
+                    cont_p0 = j
+                    cont_p0_price = _p0_price_at(cont_dir, highs, lows, j)
+                    cont_re_idx = j
+                    cont_re_price = _running_at(cont_dir, highs, lows, j)
+                else:
+                    cont_level = _retrace_level(cont_dir, cont_p0_price, cont_re_price)
+                    if _retrace_hit(cont_dir, highs, lows, j, cont_level):
+                        p3 = _find_p3(cont_dir, highs, lows, cont_p0,
+                                      j + 1, cont_re_price, cap, n)
+                        if p3 is not None:
+                            box = _build_box(cont_dir, cont_p0, cont_p0_price,
+                                             cont_re_idx, cont_re_price,
+                                             j, _p2_price_at(cont_dir, highs, lows, j),
+                                             p3, _p3_price_at(cont_dir, highs, lows, p3),
+                                             t_endpoint=t_endpoint, cap=cap)
+                            if box is not None:
+                                return box, "cont", term_idx, term_price
+
+        # ---- Reversal track update ----
+        if rev_alive and j > rev_p0_idx:
+            cur_rev = _running_at(rev_dir, highs, lows, j)
+            if _is_better(rev_dir, cur_rev, rev_re_price):
+                rev_re_price = cur_rev
+                rev_re_idx = j
+            elif not _invalidates(rev_dir, highs, lows, j, rev_p0_price):
+                # NB: rev invalidation == new chain-direction extreme, which is
+                # already handled by the "update chain terminal" block above
+                # (it respawns rev_p0 at that bar). So we only get here when
+                # the chain terminal didn't move this bar.
+                rev_level = _retrace_level(rev_dir, rev_p0_price, rev_re_price)
+                if _retrace_hit(rev_dir, highs, lows, j, rev_level):
+                    p3 = _find_p3(rev_dir, highs, lows, rev_p0_idx,
+                                  j + 1, rev_re_price, cap, n)
+                    if p3 is not None:
+                        box = _build_box(rev_dir, rev_p0_idx, rev_p0_price,
+                                         rev_re_idx, rev_re_price,
+                                         j, _p2_price_at(rev_dir, highs, lows, j),
+                                         p3, _p3_price_at(rev_dir, highs, lows, p3),
+                                         t_endpoint=t_endpoint, cap=cap)
+                        if box is not None:
+                            return box, "rev", term_idx, term_price
+        j += 1
+    return None, None, term_idx, term_price
+
+
+def _detect_box_chained(
+    highs: np.ndarray, lows: np.ndarray, closes: np.ndarray,
+    *, prominence_frac: float, distance: int,
+    t_endpoint: TEndpoint, max_length: Optional[int],
+) -> list[BoxPattern]:
+    """Chained detector. Yields boxes annotated with chain_id, chain_index,
+    reverses_chain_id. Chains end either by reversal (opposite-direction box
+    anchored at the chain's terminal extreme) or silently when neither
+    continuation nor reversal confirms within ``max_length`` bars.
+
+    Independent of the ``direction`` parameter on the dispatcher — the
+    chained detector returns boxes of BOTH directions (chains can reverse),
+    and the dispatcher's ``direction`` is used only to select the initial
+    seed pool when scanning the first chain.
+    """
+    n = len(closes)
+    if n < 2 * distance + 1:
+        return []
+    cap = max_length if max_length is not None else 10**9
+    trough_idx, peak_idx = _swings(closes, highs, lows,
+                                   prominence_frac=prominence_frac,
+                                   distance=distance)
+    seeds: list[tuple[int, str]] = sorted(
+        [(int(t), "long") for t in trough_idx]
+        + [(int(p), "short") for p in peak_idx]
+    )
+
+    out: list[BoxPattern] = []
+    next_chain_id = 0
+    seed_pos = 0
+    bar = 0
+    while bar < n:
+        # Find the next seed at or after `bar`
+        while seed_pos < len(seeds) and seeds[seed_pos][0] < bar:
+            seed_pos += 1
+        if seed_pos >= len(seeds):
+            break
+        seed_bar, init_dir = seeds[seed_pos]
+
+        first = _walk_first_box(highs, lows, seed_bar, init_dir, cap,
+                                  t_endpoint=t_endpoint, n=n)
+        if first is None:
+            seed_pos += 1
+            continue
+
+        chain_id = next_chain_id; next_chain_id += 1
+        first = _replace(first, chain_id=chain_id, chain_index=0,
+                          reverses_chain_id=None)
+        out.append(first)
+
+        current = first
+        chain_dir = first.direction
+        chain_index = 0
+        term_idx = first.p1_idx
+        term_price = first.p1_price
+        # Extend terminal across the breakout to P3
+        for k in range(first.p1_idx + 1, first.p3_idx + 1):
+            cur = _running_at(chain_dir, highs, lows, k)
+            if _is_better(chain_dir, cur, term_price):
+                term_price = cur
+                term_idx = k
+
+        bar = first.p3_idx + 1
+        # Continuation/reversal loop
+        while bar < n:
+            nbox, ntype, new_term_idx, new_term_price = _walk_chain_continuation(
+                highs, lows, current, chain_dir, term_idx, term_price,
+                bar, cap, t_endpoint, n
+            )
+            if nbox is None:
+                # Chain ends silently
+                break
+            if ntype == "cont":
+                chain_index += 1
+                nbox = _replace(nbox, chain_id=chain_id, chain_index=chain_index,
+                                 reverses_chain_id=None)
+                out.append(nbox)
+                current = nbox
+                term_idx = new_term_idx
+                term_price = new_term_price
+                # Still extend across this new box's breakout to its p3
+                for k in range(nbox.p1_idx + 1, nbox.p3_idx + 1):
+                    cur = _running_at(chain_dir, highs, lows, k)
+                    if _is_better(chain_dir, cur, term_price):
+                        term_price = cur
+                        term_idx = k
+                bar = nbox.p3_idx + 1
+            else:
+                # Reversal: end this chain, start a new one
+                old_chain_id = chain_id
+                chain_id = next_chain_id; next_chain_id += 1
+                nbox = _replace(nbox, chain_id=chain_id, chain_index=0,
+                                 reverses_chain_id=old_chain_id)
+                out.append(nbox)
+                current = nbox
+                chain_dir = nbox.direction
+                chain_index = 0
+                term_idx = nbox.p1_idx
+                term_price = nbox.p1_price
+                for k in range(nbox.p1_idx + 1, nbox.p3_idx + 1):
+                    cur = _running_at(chain_dir, highs, lows, k)
+                    if _is_better(chain_dir, cur, term_price):
+                        term_price = cur
+                        term_idx = k
+                bar = nbox.p3_idx + 1
+        # Advance seed_pos past current bar for the NEXT outer chain start
+        while seed_pos < len(seeds) and seeds[seed_pos][0] < bar:
+            seed_pos += 1
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Legacy detector (H29 / H30a) — preserved for reproducibility (`legacy=True`)
 # ---------------------------------------------------------------------------
 
@@ -473,6 +837,7 @@ def detect_boxes_df(
     t_endpoint: TEndpoint = "p2",
     max_length: Optional[int] = MAX_LENGTH_BARS,
     legacy: bool = False,
+    chain_mode: bool = False,
     high_col: str = "high",
     low_col: str = "low",
     close_col: str = "close",
@@ -482,6 +847,7 @@ def detect_boxes_df(
         df[close_col].to_numpy(), direction=direction,
         prominence_frac=prominence_frac, distance=distance,
         t_endpoint=t_endpoint, max_length=max_length, legacy=legacy,
+        chain_mode=chain_mode,
     )
 
 

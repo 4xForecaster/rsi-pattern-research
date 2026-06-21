@@ -275,6 +275,142 @@ records 544 detected boxes (275 long, 269 short, vs H30a's 330).
 Multi-timeframe examples (figures 28, 29, 30) similarly updated. All
 re-copied to `~/Documents/4xForecaster/`.
 
+## Box chaining and reversal (H30c, 2026-06-20)
+
+Dr. A extended the box construction rule with two new behaviours:
+
+1. **Same-direction chaining.** After a box confirms at P3, the P2 of
+   that box can become the P0 of a next-box in the same direction. If
+   the standard 4-point construction triggers from there, box-2 of the
+   chain is born (P0_2 = P2_1, then standard running max → 50% retrace
+   → P3 above P1). Chains can extend arbitrarily.
+2. **Reversal detection.** A bullish chain ends when an inverse
+   (bearish) box develops with its P0 anchored at the **terminal high**
+   reached during the bullish chain (the running max across the whole
+   chain, including post-P3 extensions). Mirror for bearish chains.
+
+Implemented as ``box_pattern._detect_box_chained`` and wired through
+``detect_boxes_df(chain_mode=True)``. After each confirmed box, a
+continuation candidate (P0 = previous P2, same direction) races against
+a reversal candidate (P0 = chain's running terminal extreme, opposite
+direction). Whichever confirms first wins. Each emitted box carries
+``chain_id``, ``chain_index`` (0 = first of chain), and
+``reverses_chain_id`` (set on the first box of every chain that
+reversed a prior one). The H30b standalone detector is preserved at
+``chain_mode=False`` (the default) — H30b numbers reproduce.
+
+### Unit tests (4 new, 18/18 total pass)
+
+- `test_three_box_long_chain_each_p2_becomes_next_p0` — 3-box LONG
+  chain, asserts `P0_2 = P2_1` and `P0_3 = P2_2`.
+- `test_long_to_short_reversal_anchored_at_chain_terminal_high` —
+  reversal box's P0 sits at the chain's terminal high, with
+  `reverses_chain_id` pointing back.
+- `test_short_to_long_reversal_anchored_at_chain_terminal_low` —
+  mirror.
+- `test_chain_mode_off_returns_no_chain_metadata` — back-compat.
+
+### DXY chain shape (full history)
+
+| Metric | Value |
+|---|---:|
+| Total chained boxes (long + short) | 397 |
+| Number of distinct chains | 198 |
+| Reversal-started chains | 197 |
+| Longest single chain (boxes) | 3 |
+| Most common chain length | 2 |
+
+Most chains are pairs (a LONG box reverses to a SHORT, or vice versa)
+with frequent short reversal sequences in noisy stretches. The longest
+chains run to 3 boxes — there's no DXY 5+box continuation in 36 years
+of daily data at the current swing prominence. That itself is
+informative: dominant impulses rarely chain through more than two
+continuation legs before a reversal triggers.
+
+### Chain-conditional backtest
+
+[`scripts/h30c_chain_conditional.py`](../scripts/h30c_chain_conditional.py)
+runs Variant A across four lenses per pair:
+- **H30b baseline** — standalone single-direction detector (chain_mode=False).
+- **N≥1** — all chained boxes (both directions), no chain filter.
+- **N≥2** — continuation boxes only (skip the first box of every chain;
+  trade only when at least one prior box of the chain has already
+  confirmed).
+- **N≥3** — extra-strict; trade only when ≥2 prior boxes have confirmed.
+
+Same H12 metric stack, same 70/30 OOS split, locked GO/SWEEP/NO-GO
+rules. H24 robustness gate would fire on any GO; none did.
+
+| Sym | H30b OOS / n | N≥1 OOS / n | N≥2 OOS / n | N≥3 OOS / n |
+|---|---|---|---|---|
+| DXY    | −0.23 / 30 | **+2.14 / 43** | **+3.34 / 17 SWEEP** | +0.12 / 7 |
+| EURUSD | +0.44 / 22 | −0.54 / 27 | −0.39 / 16 | −0.35 / 8 |
+| GBPUSD | +1.78 / 20 | +0.50 / 29 | +0.74 / 12 | +1.90 / 4 |
+| USDJPY | −0.17 / 26 | −0.05 / 32 | +0.03 / 21 | **+1.32 / 11 SWEEP** |
+| USDCAD | −0.41 / 22 | −0.41 / 21 | −0.86 / 14 | −1.12 / 11 |
+| AUDUSD | −0.37 / 19 | +0.78 / 26 | +0.18 / 19 | +0.37 / 14 |
+| NZDUSD | −0.81 / 20 | −0.69 / 36 | −0.39 / 25 | −0.35 / 18 |
+
+### Did chain context help?
+
+**Mixed, but DXY shows the clearest improvement Dr. A predicted.**
+
+- **DXY responds strongly to chain context.** OOS Sortino lifts from
+  −0.23 at standalone H30b to **+3.34 at N≥2** (the headline finding;
+  +3.57 above baseline). N≥2 trade count is 17, which is over the
+  10-trade NO-GO floor but under the 30-trade GO floor — so it ships as
+  **SWEEP, not GO**. The locked rule binds on trade count, not Sortino;
+  one more OOS year of DXY history would likely tip it to GO. N≥1 also
+  beats baseline (+2.14 vs −0.23) at a sample of 43 OOS trades. Tight
+  on the GO floor (+3.0). At N≥3 the trade count crashes to 7 and the
+  result is uninterpretable.
+- **USDJPY also responds at N≥3** (+1.32 SWEEP) — chain context flips
+  the standalone NO-GO to a SWEEP at the strictest lens. Smaller
+  sample (11 OOS trades).
+- **AUDUSD lifts off the floor at N≥1** (+0.78 vs baseline −0.37). Not
+  enough to clear NO-GO but the direction is right.
+- **GBPUSD regresses.** The standalone H30b result (+1.78 SWEEP) was
+  the strongest pair-baseline result anywhere in the box arc, and
+  chain context erodes it (N≥1 +0.50, N≥2 +0.74) — for GBPUSD, the
+  *first* box of each chain was carrying the signal, not the
+  continuations.
+- **EURUSD, USDCAD, NZDUSD** are NO-GO across all four lenses; chain
+  context doesn't rescue them.
+
+**0 (pair × lens) cells clear GO.** Three cells clear SWEEP under chain
+filters (DXY N≥1, DXY N≥2, USDJPY N≥3) — first time any chain-filter
+cell has crossed the +1.0 NO-GO floor.
+
+### What this means
+
+The H29/H30b standalone-box strategy was robust NO-GO with high
+statistical power. The H30c chain-conditional lens partially confirms
+Dr. A's intuition: chain context matters for at least DXY (Sortino jumps
+from −0.23 to +3.34) and modestly for USDJPY and AUDUSD. But it isn't
+universal — GBPUSD's H30b SWEEP came from standalone first-of-chain
+boxes, and the cross-symbol majority is unmoved.
+
+The DXY result is the most actionable. **It is not GO under the locked
+rule** (17 < 30 OOS trades), but the Sortino crosses the +3.0 floor —
+the *only* pair × lens cell in the box arc that has. This is consistent
+with H31's premise (regime classifier via translation aggregation):
+chain context partially substitutes for the cross-scale framing the
+Hurst canon requires, and DXY — the program's most-studied pair — is
+where the substitution works best.
+
+**No hurst-agent change.** 0 GO. Live cron untouched. Chain detector
+kept as a unit-tested research asset; H31 regime-classifier work can
+build on either chain-mode aggregation (`chain_index ≥ K` filter) or
+the lighter-touch translation aggregation already proposed.
+
+### Figures re-rendered with chain coloring (H30c)
+
+- [figures/26_box_examples_dxy.png](../figures/26_box_examples_dxy.png) — recent-5 boxes colored by chain (green family for LONG chain stages, red family for SHORT, blue/purple for reversals); chain ID and chain index annotated in each panel title.
+- [figures/27_box_history_dxy.png](../figures/27_box_history_dxy.png) — full DXY history overlay. Reversal markers `P` (→LONG) and `X` (→SHORT) added to the legend; chain summary in the title.
+- [figures/28/29/30_box_*_examples_5tf.png](../figures) — all three multi-timeframe panels regenerated with chain metadata in the per-panel annotation block (`Chain: id=N, index=K[, REVERSES chain M]`).
+
+All five PNGs re-copied to `~/Documents/4xForecaster/`.
+
 ## Sources
 
 Visual confirmation (regenerated):

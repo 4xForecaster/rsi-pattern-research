@@ -255,10 +255,15 @@ def annotate_panel(ax, df: pd.DataFrame, box: Optional[bp.BoxPattern],
                    else "NO (countertrend skip)")
     direction_label = ("LONG box" if box.direction == "long"
                        else "SHORT box")
+    chain_line = ""
+    if box.chain_id is not None:
+        chain_line = (f"\nChain: id={box.chain_id}, index={box.chain_index}"
+                       + (f", REVERSES chain {box.reverses_chain_id}"
+                          if box.reverses_chain_id is not None else ""))
     annotation = (f"Direction: {direction_label}\n"
                   f"Bars from T1/2 to P1: {delta:+.1f} bars  ({side} of T1/2)\n"
                   f"Verdict: {box.asymmetry}-translation\n"
-                  f"Trade taken: {trade_taken}")
+                  f"Trade taken: {trade_taken}{chain_line}")
     ax.text(0.02, 0.97, annotation, transform=ax.transAxes,
              fontsize=12, va="top", ha="left",
              bbox=dict(boxstyle="round,pad=0.55", facecolor="#fff9d6",
@@ -284,9 +289,10 @@ def make_figure(category: str, data: dict[str, pd.DataFrame],
     status: dict[str, str] = {}
     for k, tf in enumerate(TIMEFRAMES):
         df = data[tf]
-        longs  = bp.detect_boxes_df(df, "long")
-        shorts = bp.detect_boxes_df(df, "short")
-        all_boxes = longs + shorts
+        # H30c: use chain_mode so direction transitions arise from real chain
+        # continuation/reversal, and chain metadata is available for the
+        # title annotations.
+        all_boxes = bp.detect_boxes_df(df, chain_mode=True)
         chosen = pick_example(all_boxes, df, category)
         if chosen is None:
             status[tf] = "no example"

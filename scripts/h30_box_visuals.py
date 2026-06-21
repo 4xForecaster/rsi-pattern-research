@@ -36,9 +36,27 @@ def load_dxy_daily() -> pd.DataFrame:
 
 
 def all_boxes(df: pd.DataFrame) -> list[bp.BoxPattern]:
-    longs = bp.detect_boxes_df(df, "long")
-    shorts = bp.detect_boxes_df(df, "short")
-    return sorted(longs + shorts, key=lambda b: b.p3_idx)
+    """H30c: chain_mode=True so boxes carry chain metadata and natural
+    direction transitions (continuation + reversal)."""
+    return bp.detect_boxes_df(df, chain_mode=True)
+
+
+# H30c chain colour families — a base color per LONG/SHORT chain, darkened
+# by chain_index (continuation boxes get progressively darker), and a
+# distinct REVERSAL palette for the first box of each chain when it
+# reverses a prior chain.
+_LONG_BASE = ["#a1d99b", "#74c476", "#41ab5d", "#238b45", "#005a32"]
+_SHORT_BASE = ["#fcae91", "#fb6a4a", "#de2d26", "#a50f15", "#67000d"]
+_REVERSAL_LONG = "#1f78b4"
+_REVERSAL_SHORT = "#6a3d9a"
+
+
+def _chain_color(b: bp.BoxPattern) -> str:
+    if b.reverses_chain_id is not None:
+        return _REVERSAL_LONG if b.direction == "long" else _REVERSAL_SHORT
+    base = _LONG_BASE if b.direction == "long" else _SHORT_BASE
+    idx = min(b.chain_index or 0, len(base) - 1)
+    return base[idx]
 
 
 def _bias_color(b: bp.BoxPattern) -> str:
@@ -65,7 +83,8 @@ def _annotate_box(ax, df: pd.DataFrame, b: bp.BoxPattern, panel_n: int, total_n:
     rect = Rectangle(
         (matplotlib.dates.date2num(box_t0), lo),
         matplotlib.dates.date2num(box_t1) - matplotlib.dates.date2num(box_t0),
-        hi - lo, facecolor="#dddddd", edgecolor="none", alpha=0.35, zorder=1,
+        hi - lo, facecolor=_chain_color(b), edgecolor="none", alpha=0.35,
+        zorder=1,
     )
     ax.add_patch(rect)
 
@@ -96,8 +115,13 @@ def _annotate_box(ax, df: pd.DataFrame, b: bp.BoxPattern, panel_n: int, total_n:
     height_pips = _height_pips(b)
     bar_t0 = df.index[b.p0_idx].date(); bar_t1 = df.index[b.p3_idx].date()
 
+    chain_tag = ""
+    if b.chain_id is not None:
+        chain_tag = (f"  ·  chain {b.chain_id}, index {b.chain_index}"
+                     + (f", REVERSES chain {b.reverses_chain_id}"
+                        if b.reverses_chain_id is not None else ""))
     title = (f"Box {panel_n}/{total_n} — {b.direction.upper()}  "
-             f"{bar_t0} → {bar_t1}  ({b.length} bars)\n"
+             f"{bar_t0} → {bar_t1}  ({b.length} bars){chain_tag}\n"
              f"P1 is {side} → {b.asymmetry}  ·  {aligned}  ·  "
              f"height ≈ {height_pips:.0f} DXY×100")
     ax.set_title(title, fontsize=10, loc="left")
@@ -112,9 +136,21 @@ def fig26_recent_panels(df: pd.DataFrame, boxes: list[bp.BoxPattern]) -> pathlib
         axes = [axes]
     for k, b in enumerate(recent, start=1):
         _annotate_box(axes[k - 1], df, b, panel_n=k, total_n=n)
-    fig.suptitle("DXY daily — 5 most-recent detected box patterns\n"
-                 "(P0 swing, P1 swing peak, P2 50% retrace, P3 break-of-P1; "
-                 "T-mid = (P0+P3)/2)", fontsize=11)
+    # Summarise chain stats across the full series for the figure title
+    chains: dict = {}
+    for x in boxes:
+        if x.chain_id is not None:
+            chains.setdefault(x.chain_id, []).append(x)
+    longest = max((len(v) for v in chains.values()), default=0)
+    n_chains = len(chains)
+    n_reversal = sum(1 for v in chains.values()
+                      if v and v[0].reverses_chain_id is not None)
+    fig.suptitle(
+        f"DXY daily — 5 most-recent detected box patterns (chain_mode)\n"
+        f"P0 swing · P1 = running extreme at 50% retrace · P2 = first 50% retrace bar · "
+        f"P3 = break of P1 · T-mid = (P0+P2)/2\n"
+        f"chains: {n_chains} total · longest = {longest} boxes · reversal-started = {n_reversal}",
+        fontsize=11)
     path = OUTDIR / "26_box_examples_dxy.png"
     fig.savefig(path, dpi=140, bbox_inches="tight")
     plt.close(fig)
@@ -128,11 +164,17 @@ def fig27_full_history(df: pd.DataFrame, boxes: list[bp.BoxPattern]) -> pathlib.
     n_long_bull = sum(1 for b in boxes if b.direction == "long" and b.trade_aligned)
     n_short_bear = sum(1 for b in boxes if b.direction == "short" and b.trade_aligned)
     n_neutral = sum(1 for b in boxes if not b.trade_aligned)
+    n_reversal = sum(1 for b in boxes if b.reverses_chain_id is not None)
 
     for b in boxes:
         x = df.index[b.p3_idx]
         y = float(df["close"].iloc[b.p3_idx])
-        if b.direction == "long" and b.trade_aligned:
+        if b.reverses_chain_id is not None:
+            # Reversal markers (chain breaks)
+            mk = "P" if b.direction == "long" else "X"
+            ax.scatter(x, y, marker=mk, s=40, color=_chain_color(b),
+                       edgecolor="black", linewidth=0.6, zorder=4, alpha=0.9)
+        elif b.direction == "long" and b.trade_aligned:
             ax.scatter(x, y, marker="^", s=22, color="#2ca02c",
                        edgecolor="black", linewidth=0.25, zorder=3, alpha=0.85)
         elif b.direction == "short" and b.trade_aligned:
@@ -152,6 +194,12 @@ def fig27_full_history(df: pd.DataFrame, boxes: list[bp.BoxPattern]) -> pathlib.
         plt.Line2D([0], [0], marker="o", color="w",
                    markerfacecolor="#888", markersize=7,
                    label=f"countertrend / skipped (n={n_neutral})"),
+        plt.Line2D([0], [0], marker="P", color="w",
+                   markerfacecolor=_REVERSAL_LONG, markeredgecolor="black", markersize=9,
+                   label=f"REVERSAL → LONG"),
+        plt.Line2D([0], [0], marker="X", color="w",
+                   markerfacecolor=_REVERSAL_SHORT, markeredgecolor="black", markersize=9,
+                   label=f"REVERSAL → SHORT  (total reversals = {n_reversal})"),
     ]
     ax.legend(handles=handles, loc="upper left", fontsize=9, framealpha=0.95)
     ax.set_title("DXY daily — every detected box, marked at P3 confirmation bar\n"
