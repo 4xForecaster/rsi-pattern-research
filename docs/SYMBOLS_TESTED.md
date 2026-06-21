@@ -123,7 +123,63 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
-## Box chaining and reversal (H30c, 2026-06-20) — DXY OOS Sortino +3.34 at N≥2 (SWEEP only because 17<30 trades)
+## Box detector bug-fix pass (H30d, 2026-06-20) — H30c headlines invalidated, 0 GO 0 SWEEP everywhere
+
+Dr. A flagged two detector bugs visible in the regenerated H30c figures:
+(1) P3 marker plotted at the bar's actual high/low instead of P1's
+level (visualization bug — fix: `p3_price = p1_price`); (2) "the box
+is shallower than price action in all charts" — diagnostic showed 4/5
+recent DXY panels had **P1_idx == P0_idx** (1-bar micro-boxes whose
+swing was just the P0 bar's intra-bar range). Root cause: 50%-retrace
+check could fire before `running_max` ever advanced past P0's own
+value. Fix: gate retrace on a new `re_updated` flag in all three
+corrected code paths. Legacy detector unaffected (find_peaks vets P1
+by prominence).
+
+DXY universe after fix: 397 → **265** boxes; **0 micro-boxes** remain;
+**265/265 boxes** now have `p3_price == p1_price`. 20/20 tests pass
+(2 new regression tests).
+
+**Re-running both backtests invalidates the H30c "DXY N≥2 +3.34
+SWEEP" headline — that was bug-driven micro-box inflation.**
+
+H30b standalone Variant A (H30d-corrected):
+
+| Sym | H30c | **H30d** | Δ |
+|---|---:|---:|---:|
+| DXY    | −0.23 / 30 | **−0.61 / 40** | −0.38 |
+| EURUSD | +0.44 / 22 | **−0.17 / 25** | −0.61 |
+| GBPUSD | +1.78 / 20 | **+1.24 / 24** SWEEP | −0.54 |
+| USDJPY | −0.17 / 26 | **−0.15 / 29** | +0.02 |
+| USDCAD | −0.41 / 22 | **−0.29 / 26** | +0.12 |
+| AUDUSD | −0.37 / 19 | **−0.30 / 20** | +0.07 |
+| NZDUSD | −0.81 / 20 | **−0.97 / 23** | −0.16 |
+
+H30c chain-conditional (H30d-corrected):
+
+| Sym | H30b H30d | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---:|---:|---:|
+| DXY    | −0.61 / 40 | +0.35 / 36 | **+0.34 / 27** (was +3.34) | +0.57 / 20 |
+| EURUSD | −0.17 / 25 | −1.32 / 26 | −1.15 / 21 | −0.97 / 17 |
+| GBPUSD | +1.24 / 24 | +0.76 / 12 | +1.42 / 7 | +1.03 / 4 |
+| USDJPY | −0.15 / 29 | −0.53 / 8 | −0.75 / 4 | −0.53 / 2 |
+| USDCAD | −0.29 / 26 | +0.78 / 41 | +0.36 / 36 | +0.05 / 29 |
+| AUDUSD | −0.30 / 20 | −0.28 / 26 | −0.40 / 22 | −0.63 / 20 |
+| NZDUSD | −0.97 / 23 | −0.48 / 29 | −0.58 / 23 | −0.61 / 16 |
+
+**0 GO, 0 SWEEP across the entire (pair × lens) matrix.** GBPUSD A
+standalone (+1.24 SWEEP) is the only cell that remains above the +1.0
+NO-GO floor. The H30c "DXY chain context lifts Sortino over the GO
+floor" claim is retracted — it was a measurement artifact.
+
+Honest verdict: **the box-pattern single-box and chain-conditional
+trade strategies are decisively NO-GO** across H29 / H30a / H30b /
+H30c / H30d. Dr. A's bug catch prevented a false-positive shipping
+claim. Detector is cleaner; H31 regime-classifier remains the
+recommended direction. Detail:
+results/H30_box_pattern_corrected.md § "H30d".
+
+## Box chaining and reversal (H30c, 2026-06-20) — DXY OOS Sortino +3.34 at N≥2 (SWEEP only because 17<30 trades) — INVALIDATED BY H30d BUG FIX
 
 Dr. A extended the rule with same-direction chaining (P0 of box-N+1 = P2
 of box-N) and reversal detection (opposite-direction box anchored at the

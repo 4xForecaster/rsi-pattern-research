@@ -411,6 +411,146 @@ the lighter-touch translation aggregation already proposed.
 
 All five PNGs re-copied to `~/Documents/4xForecaster/`.
 
+## H30d (2026-06-20) — two further detector bugs Dr. A caught from the H30c figures
+
+Two real bugs surfaced when Dr. A reviewed the regenerated H30c
+figures. Both diagnosed and fixed. The H30d backtest invalidates the
+H30c "DXY N≥2 +3.34 SWEEP" headline; that was bug-driven inflation
+from now-eliminated micro-boxes.
+
+### Bug 1 — P3 marker plotted at the wrong price level
+
+Dr. A's statement: "Point-3 level always is equal to point-1 level."
+
+`BoxPattern.p3_price` was storing the bar's actual high (LONG) or low
+(SHORT) at P3 — diagnostic across the recent-5 DXY panels showed
+deltas of ±0.07 to ±0.67 vs `p1_price`. Renderers using `box.p3_price`
+as the marker's y-coordinate were plotting P3 at the bar's intra-bar
+extreme rather than at P1's threshold level.
+
+**Fix:** `_build_box` / `emit_box` now set `p3_price = p1_price`. The
+field's docstring is updated to reflect this. The bar's actual high/low
+at P3 remains recoverable from the source OHLC data. Renderers in
+`scripts/h30_box_visuals.py` and `scripts/h30_visual_examples_5tf.py`
+use `box.p3_price` directly — no chart-script changes needed; markers
+now sit at the P1 level.
+
+### Bug 2 — micro-boxes (P1 collapsing to P0 = a 1-bar swing)
+
+Dr. A's statement: "the box is shallower than price action in all
+charts."
+
+Diagnostic dump on the recent-5 DXY panels: **4 of 5 boxes had
+`P1_idx == P0_idx`**. The "box" was a 1-bar intra-bar range, not a real
+swing — exactly the shallow-box symptom Dr. A flagged.
+
+Root cause: the corrected detector initialized `running_max = high[P0]`
+(LONG) and used that for the 50% retrace level computation. If no
+post-P0 bar ever exceeded P0's high (a flat / down stretch), the
+retrace level stayed at `(low[P0] + high[P0]) / 2` = the mid of the P0
+bar's intra-bar range. The first subsequent bar whose low pierced that
+level fired the retrace check, locking P1 at P0. Result: a 1-bar
+micro-box whose "height" was the P0 bar's intra-bar range, typically
+much smaller than the surrounding price action.
+
+**Fix:** gate the 50% retrace check on a new flag `re_updated` that
+flips True only when running_max actually advances PAST P0's own value.
+If no post-P0 bar exceeds P0's high (LONG) / low (SHORT), the candidate
+abandons (or is invalidated by a new lower low / higher high) instead
+of collapsing to a micro-box. Applied to all three corrected code
+paths: `_detect_box_corrected` (standalone), `_walk_first_box` (chain
+first-box), `_walk_chain_continuation` (cont + rev tracks). Legacy
+detector unaffected (it uses `find_peaks` for P1 which is prominence-
+vetted and immune to this bug).
+
+### Regression tests (2 new, 20/20 total pass)
+
+- `test_bug2_no_p1_equals_p0_micro_box_when_running_max_never_updates_first` —
+  on a fixture where bars 6–15 stay strictly inside the P0 bar's range,
+  the detector must NOT emit a P1==P0 micro-box; it must wait for the
+  real dominant peak at idx 30.
+- `test_bug1_p3_price_equals_p1_price_for_rendering` — asserts
+  `box.p3_price == box.p1_price` on every emitted box (both standalone
+  and chain mode).
+
+### Verification on real DXY data
+
+| Metric | H30c (buggy) | H30d (fixed) |
+|---|---:|---:|
+| Total chained boxes | 397 | **265** |
+| Boxes with `p3_price == p1_price` | 0 | **265 / 265 ✓** |
+| Micro-boxes (`p1_idx == p0_idx`) | 132 | **0 ✓** |
+
+132 micro-boxes were eliminated — Dr. A was right that the visuals
+showed shallow boxes; the detector was generating them.
+
+### Backtest impact — H30c headlines invalidated
+
+**H30b standalone (Variant A) OOS Sortino — bug-corrected:**
+
+| Sym | H30c (buggy) | **H30d (fixed)** | Δ |
+|---|---:|---:|---:|
+| DXY    | −0.23 / 30 | **−0.61 / 40** | −0.38 |
+| EURUSD | +0.44 / 22 | **−0.17 / 25** | −0.61 |
+| GBPUSD | +1.78 / 20 | **+1.24 / 24** SWEEP | −0.54 |
+| USDJPY | −0.17 / 26 | **−0.15 / 29** | +0.02 |
+| USDCAD | −0.41 / 22 | **−0.29 / 26** | +0.12 |
+| AUDUSD | −0.37 / 19 | **−0.30 / 20** | +0.07 |
+| NZDUSD | −0.81 / 20 | **−0.97 / 23** | −0.16 |
+
+Most pairs shifted modestly. GBPUSD A holds at SWEEP (+1.24 down from
++1.78) — still the only positive Sortino at standalone H30b. No new
+GOs.
+
+**H30c chain-conditional (Variant A) — bug-corrected:**
+
+| Sym | H30b H30d | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---:|---:|---:|
+| DXY    | −0.61 / 40 | +0.35 / 36 | **+0.34 / 27** (was +3.34) | +0.57 / 20 |
+| EURUSD | −0.17 / 25 | −1.32 / 26 | −1.15 / 21 | −0.97 / 17 |
+| GBPUSD | +1.24 / 24 | +0.76 / 12 | +1.42 / 7 | +1.03 / 4 |
+| USDJPY | −0.15 / 29 | −0.53 / 8 | −0.75 / 4 | −0.53 / 2 |
+| USDCAD | −0.29 / 26 | +0.78 / 41 | +0.36 / 36 | +0.05 / 29 |
+| AUDUSD | −0.30 / 20 | −0.28 / 26 | −0.40 / 22 | −0.63 / 20 |
+| NZDUSD | −0.97 / 23 | −0.48 / 29 | −0.58 / 23 | −0.61 / 16 |
+
+**The H30c headline "DXY N≥2 +3.34 SWEEP" was bug-inflated.** With the
+detector fixed, DXY N≥2 lands at **+0.34 / 27 NO-GO**. USDJPY N≥3 +1.32
+SWEEP also gone (now −0.53). **0 GO cells, 0 SWEEP cells** across the
+entire (pair × lens) matrix after bug-fixes — vs H30c's claimed 0 GO,
+3 SWEEP.
+
+The honest verdict at H30d: **the box-pattern strategy is decisively
+NO-GO on every pair at every lens** when the detector doesn't
+manufacture micro-box noise. Dr. A's catch prevented an unfounded
+"DXY chain context lifts Sortino over the GO floor" claim that would
+have driven H31 design.
+
+### Visuals re-rendered with H30d detector
+
+All 5 PNGs regenerated and re-copied to `~/Documents/4xForecaster/`:
+- `figures/26_box_examples_dxy.png` — recent-5 panels now show boxes
+  with multi-bar swings (5–96 bars range). No more P1=P0 collapses.
+  P3 markers sit exactly at P1's level.
+- `figures/27_box_history_dxy.png` — 265 boxes (was 397). Chain shape
+  visibly cleaner.
+- `figures/28/29/30_box_*_examples_5tf.png` — multi-timeframe panels
+  refreshed.
+
+### Net read
+
+H30d is a *bug-fix* update, not a strategy-change update. Dr. A's catch
+exposed a detector defect that was inflating the H30c chain-conditional
+result on DXY (+3.34 → +0.34) and producing visually shallow boxes
+across every panel. With the fixes, the box-pattern arc is
+unambiguously NO-GO across H30b standalone, H30c chain-conditional, and
+H30d bug-corrected — and 20/20 unit tests including regression coverage
+for both bugs. The legacy detector (H29 / H30a) is unaffected (it uses
+`find_peaks` for P1, immune to the micro-box mechanism). The H31
+regime-classifier remains the recommended direction; the box detector
+is a cleaner research substrate after H30d but its single-trigger
+trade strategy is robustly dead.
+
 ## Sources
 
 Visual confirmation (regenerated):

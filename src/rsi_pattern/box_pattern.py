@@ -329,12 +329,18 @@ def _detect_box_corrected(
             (direction == "long" and asym == "bullish") or
             (direction == "short" and asym == "bearish")
         )
+        # H30d Bug 1 fix: p3_price stores P1's level (the threshold the
+        # bar crossed), NOT the bar's own actual high/low. Renderers using
+        # box.p3_price as the marker y-coordinate now sit at P1's level,
+        # matching Dr. A's intent ("Point-3 level always is equal to
+        # point-1 level"). The bar's actual high/low at P3 is recoverable
+        # from the source data if needed.
         boxes.append(BoxPattern(
             direction=direction,
             p0_idx=int(p0_idx), p0_price=p0p,
             p1_idx=int(p1_idx), p1_price=p1p,
             p2_idx=int(p2_idx), p2_price=p2p,
-            p3_idx=int(p3_idx), p3_price=p3_price_at(p3_idx),
+            p3_idx=int(p3_idx), p3_price=p1p,
             height=height, length=length, t_mid=t_mid,
             asymmetry=asym, trade_aligned=aligned,
         ))
@@ -347,6 +353,13 @@ def _detect_box_corrected(
         p0p = p0_price_at(p0_idx)
         re_idx = p0_idx
         re_price = running_at(p0_idx)
+        # H30d (2026-06-20) — gate the 50% retrace on running_max having
+        # ACTUALLY moved past P0's running value. Without this gate the
+        # detector collapses to P1==P0 on bars where no post-P0 high
+        # exceeded P0's high — producing 1-bar micro-boxes whose "swing"
+        # is just the P0 bar's intra-bar range (Dr. A's "box shallower
+        # than price action" complaint).
+        re_updated = False
         triggered = False
         respawned: Optional[int] = None
         i = p0_idx + 1
@@ -357,24 +370,26 @@ def _detect_box_corrected(
             if is_better(current, re_price):
                 re_price = current
                 re_idx = i
+                re_updated = True
                 i += 1
                 continue
             # Invalidation check FIRST (per spec wording: "before the 50% retrace triggers")
             if invalidated(i, p0p):
                 respawned = i  # respawn at this bar (new lower low / higher high)
                 break
-            # 50% retrace check
-            level = retrace(p0p, re_price)
-            if retrace_hit(i, level):
-                p3_idx = find_p3(p0_idx, i + 1, re_price)
-                if p3_idx is None:
-                    # No P3 within cap → abandon
+            # 50% retrace check — gated on re_updated (Bug 2 fix)
+            if re_updated:
+                level = retrace(p0p, re_price)
+                if retrace_hit(i, level):
+                    p3_idx = find_p3(p0_idx, i + 1, re_price)
+                    if p3_idx is None:
+                        # No P3 within cap → abandon
+                        break
+                    if emit_box(p0_idx, p0p, re_idx, re_price, i, p3_idx):
+                        last_p3 = p3_idx
+                        triggered = True
+                    # In either case (emit OR cap-reject) this candidate is done.
                     break
-                if emit_box(p0_idx, p0p, re_idx, re_price, i, p3_idx):
-                    last_p3 = p3_idx
-                    triggered = True
-                # In either case (emit OR cap-reject) this candidate is done.
-                break
             i += 1
 
         # Decide next candidate
@@ -466,12 +481,16 @@ def _build_box(direction: str, p0_idx: int, p0_price: float,
         (direction == "long" and asym == "bullish") or
         (direction == "short" and asym == "bearish")
     )
+    # H30d Bug 1 fix: see emit_box in _detect_box_corrected — p3_price is
+    # P1's level (the threshold the breakout bar crossed), not the bar's
+    # own actual high/low. The caller's p3_price argument is ignored for
+    # the same reason on this corrected path.
     return BoxPattern(
         direction=direction,
         p0_idx=int(p0_idx), p0_price=p0_price,
         p1_idx=int(p1_idx), p1_price=p1_price,
         p2_idx=int(p2_idx), p2_price=p2_price,
-        p3_idx=int(p3_idx), p3_price=p3_price,
+        p3_idx=int(p3_idx), p3_price=p1_price,
         height=height, length=length, t_mid=t_mid,
         asymmetry=asym, trade_aligned=aligned,
     )
@@ -490,6 +509,7 @@ def _walk_first_box(highs: np.ndarray, lows: np.ndarray,
     p0_price = _p0_price_at(direction, highs, lows, p0_idx)
     re_idx = p0_idx
     re_price = _running_at(direction, highs, lows, p0_idx)
+    re_updated = False  # H30d: gate retrace on running_max actually advancing past P0
     i = p0_idx + 1
     while i < n:
         if (i - p0_idx) > cap:
@@ -498,20 +518,22 @@ def _walk_first_box(highs: np.ndarray, lows: np.ndarray,
         if _is_better(direction, current, re_price):
             re_price = current
             re_idx = i
+            re_updated = True
             i += 1
             continue
         if _invalidates(direction, highs, lows, i, p0_price):
             return None  # caller should respawn from next seed (cleaner here)
-        level = _retrace_level(direction, p0_price, re_price)
-        if _retrace_hit(direction, highs, lows, i, level):
-            p3 = _find_p3(direction, highs, lows, p0_idx, i + 1, re_price, cap, n)
-            if p3 is None:
-                return None
-            p2_price = _p2_price_at(direction, highs, lows, i)
-            p3_price = _p3_price_at(direction, highs, lows, p3)
-            return _build_box(direction, p0_idx, p0_price, re_idx, re_price,
-                              i, p2_price, p3, p3_price,
-                              t_endpoint=t_endpoint, cap=cap)
+        if re_updated:
+            level = _retrace_level(direction, p0_price, re_price)
+            if _retrace_hit(direction, highs, lows, i, level):
+                p3 = _find_p3(direction, highs, lows, p0_idx, i + 1, re_price, cap, n)
+                if p3 is None:
+                    return None
+                p2_price = _p2_price_at(direction, highs, lows, i)
+                p3_price = _p3_price_at(direction, highs, lows, p3)
+                return _build_box(direction, p0_idx, p0_price, re_idx, re_price,
+                                  i, p2_price, p3, p3_price,
+                                  t_endpoint=t_endpoint, cap=cap)
         i += 1
     return None
 
@@ -539,11 +561,13 @@ def _walk_chain_continuation(
     cont_p0_price = current_box.p2_price
     cont_re_idx = cont_p0
     cont_re_price = _running_at(cont_dir, highs, lows, cont_p0)
+    cont_re_updated = False    # H30d gate (see _detect_box_corrected)
 
     rev_p0_idx = chain_terminal_idx
     rev_p0_price = chain_terminal_price
     rev_re_idx = rev_p0_idx
     rev_re_price = _running_at(rev_dir, highs, lows, rev_p0_idx)
+    rev_re_updated = False     # H30d gate
 
     term_idx = chain_terminal_idx
     term_price = chain_terminal_price
@@ -565,6 +589,7 @@ def _walk_chain_continuation(
             rev_p0_price = cur_chain
             rev_re_idx = j
             rev_re_price = _running_at(rev_dir, highs, lows, j)
+            rev_re_updated = False  # H30d: respawned candidate hasn't earned an update yet
 
         # ---- Continuation track update ----
         if cont_alive:
@@ -572,6 +597,7 @@ def _walk_chain_continuation(
             if _is_better(cont_dir, cur_cont, cont_re_price):
                 cont_re_price = cur_cont
                 cont_re_idx = j
+                cont_re_updated = True
             else:
                 if _invalidates(cont_dir, highs, lows, j, cont_p0_price):
                     # Respawn cont at this bar
@@ -579,7 +605,8 @@ def _walk_chain_continuation(
                     cont_p0_price = _p0_price_at(cont_dir, highs, lows, j)
                     cont_re_idx = j
                     cont_re_price = _running_at(cont_dir, highs, lows, j)
-                else:
+                    cont_re_updated = False
+                elif cont_re_updated:
                     cont_level = _retrace_level(cont_dir, cont_p0_price, cont_re_price)
                     if _retrace_hit(cont_dir, highs, lows, j, cont_level):
                         p3 = _find_p3(cont_dir, highs, lows, cont_p0,
@@ -599,7 +626,8 @@ def _walk_chain_continuation(
             if _is_better(rev_dir, cur_rev, rev_re_price):
                 rev_re_price = cur_rev
                 rev_re_idx = j
-            elif not _invalidates(rev_dir, highs, lows, j, rev_p0_price):
+                rev_re_updated = True
+            elif rev_re_updated and not _invalidates(rev_dir, highs, lows, j, rev_p0_price):
                 # NB: rev invalidation == new chain-direction extreme, which is
                 # already handled by the "update chain terminal" block above
                 # (it respawns rev_p0 at that bar). So we only get here when

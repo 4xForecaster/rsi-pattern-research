@@ -533,6 +533,86 @@ def test_chain_mode_off_returns_no_chain_metadata():
         assert b.reverses_chain_id is None
 
 
+def _synth_long_box_no_post_p0_higher_high_until_late():
+    """LONG fixture where the very first post-P0 bar does NOT make a new
+    high above P0's bar. If the detector doesn't gate the retrace check on
+    'running_max has actually advanced past P0', it collapses P1 to P0 at
+    the first low-pierce of the P0 bar's midpoint — producing a 1-bar
+    micro-box (Bug 2 in H30c).
+
+    Geometry: P0 idx 5 (low 92, high 95). Bars 6-15 stay below P0's high
+    (range 93-94, so high < 95, low > 92 — no invalidation, no running-max
+    update). Bars 16-30 rally to peak 105 at idx 30. Pullback to 50% level
+    (= (92+105)/2 = 98.5) at idx 38. P3 break above 105 by idx 45."""
+    n = 70
+    rng = np.random.RandomState(31)
+    closes = 100 + rng.normal(0, 0.05, n)
+    H = closes + 0.3; L = closes - 0.3
+    # P0
+    L[5] = 92.0; H[5] = 95.0; closes[5] = 93.5
+    # Bars 6..15: stay between 92.5 and 94.5 — no new high above 95, no
+    # invalidation below 92
+    for i, hh, ll in zip(range(6, 16),
+                         (94.0, 93.8, 94.2, 93.6, 94.0, 94.3, 93.9, 94.1, 94.4, 94.5),
+                         (93.0, 92.8, 93.1, 92.7, 92.9, 93.2, 92.6, 92.9, 93.3, 93.4)):
+        H[i] = hh; L[i] = ll; closes[i] = (hh + ll) / 2
+    # Rally 16→30 from ~94 to 105
+    for i, v in enumerate(np.linspace(94.5, 105.0, 15)):
+        H[16 + i] = v + 0.3; L[16 + i] = v - 0.3; closes[16 + i] = v
+    H[30] = 105.5; L[30] = 104.5; closes[30] = 105.0
+    # Pullback to ≤ 98.5 by idx 38
+    for i, v in enumerate(np.linspace(105.0, 98.0, 9)):
+        H[30 + i] = v + 0.3; L[30 + i] = v - 0.3; closes[30 + i] = v
+    L[38] = 98.0; H[38] = 98.6; closes[38] = 98.3
+    # P3 break above 105 by idx 50
+    for i, v in enumerate(np.linspace(98.3, 107.0, 13)):
+        H[38 + i] = v + 0.3; L[38 + i] = v - 0.3; closes[38 + i] = v
+    H[50] = 107.5; L[50] = 106.5; closes[50] = 107.0
+    return _df(H.tolist(), L.tolist(), closes.tolist())
+
+
+def test_bug2_no_p1_equals_p0_micro_box_when_running_max_never_updates_first():
+    """Regression test for H30d Bug 2: the detector must NOT emit a box
+    whose P1_idx equals P0_idx. Even when several bars after P0 fail to
+    exceed P0's bar's high (so running_max can't update), the retrace
+    check stays gated until a real higher high appears. The detector then
+    locks P1 at the real dominant peak around idx 30 (~105)."""
+    df = _synth_long_box_no_post_p0_higher_high_until_late()
+    boxes = bp.detect_boxes_df(df, "long")
+    assert len(boxes) >= 1
+    b = boxes[0]
+    assert b.p1_idx != b.p0_idx, (
+        f"micro-box bug regressed: p1_idx == p0_idx == {b.p0_idx} "
+        f"means P1 collapsed to P0 (1-bar swing).")
+    assert b.p1_idx >= 16, (
+        f"P1 locked too early at idx {b.p1_idx}; "
+        f"the running_max should reach the dominant peak around idx 30.")
+    assert b.p1_price > 100, (
+        f"P1 price {b.p1_price} below the dominant peak ~105 — "
+        f"running_max didn't extend past the intermediate flat region.")
+
+
+def test_bug1_p3_price_equals_p1_price_for_rendering():
+    """Regression test for H30d Bug 1: BoxPattern.p3_price (the field
+    renderers use for the P3 marker's y-coordinate) must equal p1_price,
+    matching Dr. A's "Point-3 level always is equal to point-1 level."
+    The bar's actual high/low at P3 is still recoverable from the source
+    OHLC data if a caller wants it."""
+    df = _synth_long_box_no_post_p0_higher_high_until_late()
+    boxes = bp.detect_boxes_df(df, "long")
+    assert len(boxes) >= 1
+    for b in boxes:
+        assert b.p3_price == b.p1_price, (
+            f"p3_price={b.p3_price} != p1_price={b.p1_price}")
+    # Cross-check on chain mode (which goes through _build_box)
+    df2 = _synth_three_box_long_chain_then_short_reversal()
+    chained = bp.detect_boxes_df(df2, chain_mode=True)
+    for b in chained:
+        assert b.p3_price == b.p1_price, (
+            f"chained box {b.chain_id}/{b.chain_index}: p3_price={b.p3_price} "
+            f"!= p1_price={b.p1_price}")
+
+
 def test_box_to_trade_variant_A_trail_anchored_on_p2():
     """Variant A's trail-activation price must be P2 ± 2.200·height
     (NOT entry ± factor·range_size). Build a series where stop never fires,
