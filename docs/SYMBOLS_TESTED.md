@@ -123,6 +123,34 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## Box-pattern signal (H29, 2026-06-18) — 0/7 GO, orthogonal to M-P1
+
+Dr. A's 4-point box signal (P0 swing low → P1 swing high → P2 50%
+retrace → P3 break of P1) + Hurst time-asymmetry filter (take LONG only
+when P1.idx > T-mid). Implemented in `src/rsi_pattern/box_pattern.py`
+with 5/5 unit tests + DXY mechanics audit. **Detection is faithful, the
+bias rule does not produce edge** at the locked floors on any of the 7
+FX symbols:
+
+| Symbol | Universe (long boxes) | Aligned (P1>T-mid) | Trades | OOS Sortino | Box decision |
+|---|---:|---:|---:|---:|---|
+| DXY    | 34 |  6 |  5 | −0.46 | NO-GO |
+| EURUSD | 51 |  5 |  4 |  n/a (OOS n=0) | NO-GO |
+| GBPUSD | 51 |  7 |  7 | −1.21 | NO-GO |
+| USDJPY | 24 |  2 |  2 | −0.76 | NO-GO |
+| USDCAD | 20 |  2 |  2 | +0.43 | NO-GO |
+| AUDUSD | 87 | 11 | 11 | −0.19 | NO-GO |
+| NZDUSD | 83 | 14 | 14 | −1.65 | NO-GO |
+
+The bias filter passes ~10–18% of detected boxes, and surviving trades
+cluster around Sortino ≈ −0.5 — the time-asymmetry rule as spec'd does
+not predict subsequent uptrends on FX daily. Confluence with M-P1 LONG:
+**0% same-day overlap on every symbol** — the two signals are
+mechanically orthogonal (a useful prior if the box rule is ever
+revived). No hurst-agent change. Module kept as a research asset
+(future H30 candidate: inverted bias rule). Detail:
+results/H29_box_pattern_validation.md.
+
 ## Per-symbol notes
 
 ### EURUSD — GO (solid). H23 (2026-05-19)
