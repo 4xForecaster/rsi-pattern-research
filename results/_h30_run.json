@@ -1,0 +1,763 @@
+{
+  "seed": 42,
+  "is_fraction": 0.7,
+  "spec": {
+    "t_endpoint": "p2",
+    "max_length": 250,
+    "variant_A_levels": [
+      1.618,
+      2.345,
+      3.456
+    ],
+    "variant_B_levels": [
+      1.618,
+      2.236,
+      3.618
+    ],
+    "variant_A_anchor": "P2_price",
+    "variant_B_anchor": "P1_price"
+  },
+  "results_by_variant": {
+    "A": {
+      "DXY": {
+        "oos_window": [
+          "2015-07-23",
+          "2026-05-04",
+          2792
+        ],
+        "universe_full": 170,
+        "aligned_full": 121,
+        "trades_full": 103,
+        "sortino_full": -0.157,
+        "max_dd_full": -0.4262,
+        "universe_oos": 53,
+        "aligned_oos": 34,
+        "trades_oos": 29,
+        "sortino_oos": -0.782,
+        "max_dd_oos": -0.159,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.78<1 OR OOS trades 29<10",
+        "robustness": null
+      },
+      "EURUSD": {
+        "oos_window": [
+          "2019-08-28",
+          "2026-05-18",
+          1749
+        ],
+        "universe_full": 119,
+        "aligned_full": 96,
+        "trades_full": 83,
+        "sortino_full": -0.473,
+        "max_dd_full": -0.3223,
+        "universe_oos": 42,
+        "aligned_oos": 32,
+        "trades_oos": 29,
+        "sortino_oos": -1.422,
+        "max_dd_oos": -0.2382,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -1.42<1 OR OOS trades 29<10",
+        "robustness": null
+      },
+      "GBPUSD": {
+        "oos_window": [
+          "2019-08-23",
+          "2026-05-18",
+          1752
+        ],
+        "universe_full": 97,
+        "aligned_full": 64,
+        "trades_full": 56,
+        "sortino_full": -0.912,
+        "max_dd_full": -0.3968,
+        "universe_oos": 30,
+        "aligned_oos": 19,
+        "trades_oos": 18,
+        "sortino_oos": -0.699,
+        "max_dd_oos": -0.1136,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.70<1 OR OOS trades 18<10",
+        "robustness": null
+      },
+      "USDJPY": {
+        "oos_window": [
+          "2017-07-17",
+          "2026-05-18",
+          2299
+        ],
+        "universe_full": 142,
+        "aligned_full": 90,
+        "trades_full": 74,
+        "sortino_full": 0.181,
+        "max_dd_full": -0.105,
+        "universe_oos": 42,
+        "aligned_oos": 32,
+        "trades_oos": 28,
+        "sortino_oos": -0.399,
+        "max_dd_oos": -0.1,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.40<1 OR OOS trades 28<10",
+        "robustness": null
+      },
+      "USDCAD": {
+        "oos_window": [
+          "2019-07-31",
+          "2026-05-18",
+          1769
+        ],
+        "universe_full": 123,
+        "aligned_full": 88,
+        "trades_full": 81,
+        "sortino_full": -0.581,
+        "max_dd_full": -0.3,
+        "universe_oos": 31,
+        "aligned_oos": 21,
+        "trades_oos": 19,
+        "sortino_oos": -0.174,
+        "max_dd_oos": -0.0616,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.17<1 OR OOS trades 19<10",
+        "robustness": null
+      },
+      "AUDUSD": {
+        "oos_window": [
+          "2020-05-18",
+          "2026-05-18",
+          1561
+        ],
+        "universe_full": 129,
+        "aligned_full": 91,
+        "trades_full": 78,
+        "sortino_full": -0.501,
+        "max_dd_full": -0.3641,
+        "universe_oos": 44,
+        "aligned_oos": 37,
+        "trades_oos": 32,
+        "sortino_oos": 0.316,
+        "max_dd_oos": -0.115,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino +0.32<1 OR OOS trades 32<10",
+        "robustness": null
+      },
+      "NZDUSD": {
+        "oos_window": [
+          "2019-08-28",
+          "2026-05-18",
+          1749
+        ],
+        "universe_full": 122,
+        "aligned_full": 77,
+        "trades_full": 71,
+        "sortino_full": -0.718,
+        "max_dd_full": -0.3931,
+        "universe_oos": 43,
+        "aligned_oos": 29,
+        "trades_oos": 28,
+        "sortino_oos": -0.116,
+        "max_dd_oos": -0.1027,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.12<1 OR OOS trades 28<10",
+        "robustness": null
+      }
+    },
+    "B": {
+      "DXY": {
+        "oos_window": [
+          "2015-07-23",
+          "2026-05-04",
+          2792
+        ],
+        "universe_full": 170,
+        "aligned_full": 121,
+        "trades_full": 109,
+        "sortino_full": -0.018,
+        "max_dd_full": -0.4288,
+        "universe_oos": 53,
+        "aligned_oos": 34,
+        "trades_oos": 31,
+        "sortino_oos": -0.894,
+        "max_dd_oos": -0.1873,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.89<1 OR OOS trades 31<10",
+        "robustness": null
+      },
+      "EURUSD": {
+        "oos_window": [
+          "2019-08-28",
+          "2026-05-18",
+          1749
+        ],
+        "universe_full": 119,
+        "aligned_full": 96,
+        "trades_full": 91,
+        "sortino_full": -0.294,
+        "max_dd_full": -0.2964,
+        "universe_oos": 42,
+        "aligned_oos": 32,
+        "trades_oos": 32,
+        "sortino_oos": -1.197,
+        "max_dd_oos": -0.2425,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -1.20<1 OR OOS trades 32<10",
+        "robustness": null
+      },
+      "GBPUSD": {
+        "oos_window": [
+          "2019-08-23",
+          "2026-05-18",
+          1752
+        ],
+        "universe_full": 97,
+        "aligned_full": 64,
+        "trades_full": 63,
+        "sortino_full": -0.944,
+        "max_dd_full": -0.4241,
+        "universe_oos": 30,
+        "aligned_oos": 19,
+        "trades_oos": 18,
+        "sortino_oos": -0.557,
+        "max_dd_oos": -0.0936,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.56<1 OR OOS trades 18<10",
+        "robustness": null
+      },
+      "USDJPY": {
+        "oos_window": [
+          "2017-07-17",
+          "2026-05-18",
+          2299
+        ],
+        "universe_full": 142,
+        "aligned_full": 90,
+        "trades_full": 82,
+        "sortino_full": 0.03,
+        "max_dd_full": -0.1641,
+        "universe_oos": 42,
+        "aligned_oos": 32,
+        "trades_oos": 30,
+        "sortino_oos": -0.385,
+        "max_dd_oos": -0.1,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.38<1 OR OOS trades 30<10",
+        "robustness": null
+      },
+      "USDCAD": {
+        "oos_window": [
+          "2019-07-31",
+          "2026-05-18",
+          1769
+        ],
+        "universe_full": 123,
+        "aligned_full": 88,
+        "trades_full": 86,
+        "sortino_full": -0.585,
+        "max_dd_full": -0.3492,
+        "universe_oos": 31,
+        "aligned_oos": 21,
+        "trades_oos": 21,
+        "sortino_oos": -0.12,
+        "max_dd_oos": -0.0701,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino -0.12<1 OR OOS trades 21<10",
+        "robustness": null
+      },
+      "AUDUSD": {
+        "oos_window": [
+          "2020-05-18",
+          "2026-05-18",
+          1561
+        ],
+        "universe_full": 129,
+        "aligned_full": 91,
+        "trades_full": 83,
+        "sortino_full": -0.416,
+        "max_dd_full": -0.3654,
+        "universe_oos": 44,
+        "aligned_oos": 37,
+        "trades_oos": 32,
+        "sortino_oos": 0.7,
+        "max_dd_oos": -0.0904,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino +0.70<1 OR OOS trades 32<10",
+        "robustness": null
+      },
+      "NZDUSD": {
+        "oos_window": [
+          "2019-08-28",
+          "2026-05-18",
+          1749
+        ],
+        "universe_full": 122,
+        "aligned_full": 77,
+        "trades_full": 74,
+        "sortino_full": -0.677,
+        "max_dd_full": -0.4221,
+        "universe_oos": 43,
+        "aligned_oos": 29,
+        "trades_oos": 29,
+        "sortino_oos": 0.096,
+        "max_dd_oos": -0.1072,
+        "decision": "NO-GO",
+        "reason": "OOS Sortino +0.10<1 OR OOS trades 29<10",
+        "robustness": null
+      }
+    }
+  },
+  "h29_compare": {
+    "DXY": {
+      "data_first": "1990-01-02",
+      "data_last": "2026-05-04",
+      "data_bars": 9304,
+      "oos_window": [
+        "2015-07-23",
+        "2026-05-04",
+        2792
+      ],
+      "box_full": {
+        "trades": 5,
+        "sortino": -0.12131149554928246,
+        "sharpe": -0.0761922901603409,
+        "max_dd": -0.020000000000000018,
+        "mar": -0.029030031454435588,
+        "calmar": -0.33579980692300754,
+        "total_R_per_year": -0.057621333765035455,
+        "universe": 34,
+        "aligned": 6
+      },
+      "box_is": {
+        "trades": 4,
+        "sortino": -0.9419180488553416,
+        "sharpe": -0.9431651329206836,
+        "max_dd": -0.040000000000000036,
+        "mar": -0.325986141240647,
+        "calmar": -0.3369876660086942,
+        "total_R_per_year": -1.2860915492957745,
+        "universe": 40,
+        "aligned": 4
+      },
+      "box_oos": {
+        "trades": 3,
+        "sortino": -0.46022780395042584,
+        "sharpe": -0.4603568326436595,
+        "max_dd": -0.030000000000000027,
+        "mar": -0.10374431545451988,
+        "calmar": -0.3358326232480308,
+        "total_R_per_year": -0.3070187727654805,
+        "universe": 25,
+        "aligned": 4
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -0.46<1 OR OOS trades 3<10",
+      "robustness": null,
+      "mp1_full_trades": 56,
+      "mp1_oos_trades": 19,
+      "confluence_full": {
+        "box_n": 5,
+        "mp1_n": 56,
+        "intersection_n": 0,
+        "union_n": 61,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 3,
+        "mp1_n": 19,
+        "intersection_n": 0,
+        "union_n": 22,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "EURUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5827,
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "box_full": {
+        "trades": 4,
+        "sortino": 0.7828205340658343,
+        "sharpe": 0.2144044074189728,
+        "max_dd": -0.01876893016543535,
+        "mar": 0.17959188960031447,
+        "calmar": -0.3346201766322839,
+        "total_R_per_year": 0.344121783945164,
+        "universe": 51,
+        "aligned": 5
+      },
+      "box_is": {
+        "trades": 4,
+        "sortino": 0.7828205340658343,
+        "sharpe": 0.2144044074189728,
+        "max_dd": -0.01876893016543535,
+        "mar": 0.17959188960031447,
+        "calmar": -0.3346201766322839,
+        "total_R_per_year": 0.344121783945164,
+        "universe": 49,
+        "aligned": 5
+      },
+      "box_oos": {
+        "trades": 0,
+        "sortino": NaN,
+        "sharpe": NaN,
+        "max_dd": 0.0,
+        "mar": NaN,
+        "calmar": NaN,
+        "total_R_per_year": NaN,
+        "universe": 13,
+        "aligned": 0
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino undefined (n=0)",
+      "robustness": null,
+      "mp1_full_trades": 30,
+      "mp1_oos_trades": 12,
+      "confluence_full": {
+        "box_n": 4,
+        "mp1_n": 30,
+        "intersection_n": 0,
+        "union_n": 34,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 0,
+        "mp1_n": 12,
+        "intersection_n": 0,
+        "union_n": 12,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "GBPUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5839,
+      "oos_window": [
+        "2019-08-23",
+        "2026-05-18",
+        1752
+      ],
+      "box_full": {
+        "trades": 7,
+        "sortino": -0.4724663145695836,
+        "sharpe": -0.47264579074872753,
+        "max_dd": -0.07000000000000006,
+        "mar": -0.047857815286613134,
+        "calmar": -0.3347511188477387,
+        "total_R_per_year": -0.32368021268515,
+        "universe": 51,
+        "aligned": 7
+      },
+      "box_is": {
+        "trades": 2,
+        "sortino": -0.5452867359537534,
+        "sharpe": -0.545447745608942,
+        "max_dd": -0.020000000000000018,
+        "mar": -0.2171976436712573,
+        "calmar": -0.33469070458833855,
+        "total_R_per_year": -0.4309734513274336,
+        "universe": 38,
+        "aligned": 2
+      },
+      "box_oos": {
+        "trades": 2,
+        "sortino": -1.2123412850624213,
+        "sharpe": -1.2137112968539852,
+        "max_dd": -0.013490933672657857,
+        "mar": -1.3064013159571883,
+        "calmar": -1.3064013159571883,
+        "total_R_per_year": -1.7661518006947259,
+        "universe": 11,
+        "aligned": 2
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -1.21<1 OR OOS trades 2<10",
+      "robustness": null,
+      "mp1_full_trades": 34,
+      "mp1_oos_trades": 9,
+      "confluence_full": {
+        "box_n": 7,
+        "mp1_n": 34,
+        "intersection_n": 0,
+        "union_n": 41,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 2,
+        "mp1_n": 9,
+        "intersection_n": 0,
+        "union_n": 11,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "USDJPY": {
+      "data_first": "1996-10-30",
+      "data_last": "2026-05-18",
+      "data_bars": 7661,
+      "oos_window": [
+        "2017-07-17",
+        "2026-05-18",
+        2299
+      ],
+      "box_full": {
+        "trades": 2,
+        "sortino": 0.5386454128111404,
+        "sharpe": 0.12142304483877332,
+        "max_dd": -0.009601570719879438,
+        "mar": 0.12315882944182847,
+        "calmar": -0.3346345787409537,
+        "total_R_per_year": 0.12003348455518635,
+        "universe": 24,
+        "aligned": 2
+      },
+      "box_is": {
+        "trades": 2,
+        "sortino": 1.4205344138989004,
+        "sharpe": 0.32017735228502925,
+        "max_dd": -0.009601570719879438,
+        "mar": 0.8595923939628609,
+        "calmar": -0.3346345787409537,
+        "total_R_per_year": 0.8348337561516008,
+        "universe": 45,
+        "aligned": 2
+      },
+      "box_oos": {
+        "trades": 2,
+        "sortino": -0.7593711066007729,
+        "sharpe": -0.7598063790489481,
+        "max_dd": -0.020000000000000018,
+        "mar": -0.42036477801011235,
+        "calmar": -0.42036477801011235,
+        "total_R_per_year": -0.835812356979405,
+        "universe": 29,
+        "aligned": 2
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -0.76<1 OR OOS trades 2<10",
+      "robustness": null,
+      "mp1_full_trades": 47,
+      "mp1_oos_trades": 16,
+      "confluence_full": {
+        "box_n": 2,
+        "mp1_n": 47,
+        "intersection_n": 0,
+        "union_n": 49,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 2,
+        "mp1_n": 16,
+        "intersection_n": 0,
+        "union_n": 18,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "USDCAD": {
+      "data_first": "2003-09-17",
+      "data_last": "2026-05-18",
+      "data_bars": 5895,
+      "oos_window": [
+        "2019-07-31",
+        "2026-05-18",
+        1769
+      ],
+      "box_full": {
+        "trades": 2,
+        "sortino": -0.25580441026056433,
+        "sharpe": -0.2558210195583475,
+        "max_dd": -0.020000000000000018,
+        "mar": -0.04788045420829885,
+        "calmar": -0.33469070458833855,
+        "total_R_per_year": -0.09484549467670735,
+        "universe": 20,
+        "aligned": 2
+      },
+      "box_is": {
+        "trades": 2,
+        "sortino": -1.883933690577559,
+        "sharpe": -1.8906497120141905,
+        "max_dd": -0.020000000000000018,
+        "mar": -2.5318982609035676,
+        "calmar": -2.5318982609035676,
+        "total_R_per_year": -5.144366197183098,
+        "universe": 27,
+        "aligned": 2
+      },
+      "box_oos": {
+        "trades": 4,
+        "sortino": 0.4329059222944224,
+        "sharpe": 0.16459562032844116,
+        "max_dd": -0.01324405752264124,
+        "mar": 0.3361418118633355,
+        "calmar": 0.3361418118633355,
+        "total_R_per_year": 0.44669984631974297,
+        "universe": 28,
+        "aligned": 4
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino +0.43<1 OR OOS trades 4<10",
+      "robustness": null,
+      "mp1_full_trades": 35,
+      "mp1_oos_trades": 15,
+      "confluence_full": {
+        "box_n": 2,
+        "mp1_n": 35,
+        "intersection_n": 0,
+        "union_n": 37,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 4,
+        "mp1_n": 15,
+        "intersection_n": 0,
+        "union_n": 19,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "AUDUSD": {
+      "data_first": "2006-05-16",
+      "data_last": "2026-05-18",
+      "data_bars": 5203,
+      "oos_window": [
+        "2020-05-18",
+        "2026-05-18",
+        1561
+      ],
+      "box_full": {
+        "trades": 11,
+        "sortino": -0.14154124041856941,
+        "sharpe": -0.07321564575650674,
+        "max_dd": -0.06590211119768985,
+        "mar": -0.019736120771917415,
+        "calmar": 0.35575377081202353,
+        "total_R_per_year": -0.12855469522141116,
+        "universe": 87,
+        "aligned": 11
+      },
+      "box_is": {
+        "trades": 7,
+        "sortino": -0.4681170158495903,
+        "sharpe": -0.435051529992267,
+        "max_dd": -0.06000000000000005,
+        "mar": -0.06520296079631961,
+        "calmar": NaN,
+        "total_R_per_year": -0.38198270499963516,
+        "universe": 71,
+        "aligned": 7
+      },
+      "box_oos": {
+        "trades": 6,
+        "sortino": -0.1853016732146027,
+        "sharpe": -0.09216005799541747,
+        "max_dd": -0.038902762925147716,
+        "mar": -0.06257996619159112,
+        "calmar": -0.3368911741852423,
+        "total_R_per_year": -0.24230978067392633,
+        "universe": 44,
+        "aligned": 6
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -0.19<1 OR OOS trades 6<10",
+      "robustness": null,
+      "mp1_full_trades": 33,
+      "mp1_oos_trades": 9,
+      "confluence_full": {
+        "box_n": 11,
+        "mp1_n": 33,
+        "intersection_n": 0,
+        "union_n": 44,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 6,
+        "mp1_n": 9,
+        "intersection_n": 0,
+        "union_n": 15,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    },
+    "NZDUSD": {
+      "data_first": "2003-12-01",
+      "data_last": "2026-05-18",
+      "data_bars": 5828,
+      "oos_window": [
+        "2019-08-28",
+        "2026-05-18",
+        1749
+      ],
+      "box_full": {
+        "trades": 14,
+        "sortino": -0.5955042745778351,
+        "sharpe": -0.5086627797405477,
+        "max_dd": -0.12709163494285236,
+        "mar": -0.05098241230863523,
+        "calmar": -0.3408159081886517,
+        "total_R_per_year": -0.6145793082176224,
+        "universe": 83,
+        "aligned": 14
+      },
+      "box_is": {
+        "trades": 10,
+        "sortino": -0.4942219802257607,
+        "sharpe": -0.3956585382800226,
+        "max_dd": -0.08798651649889777,
+        "mar": -0.05508386558376562,
+        "calmar": -0.3359221290443077,
+        "total_R_per_year": -0.4693493923249826,
+        "universe": 64,
+        "aligned": 10
+      },
+      "box_oos": {
+        "trades": 6,
+        "sortino": -1.6473339129844662,
+        "sharpe": -1.6547885597484544,
+        "max_dd": -0.06000000000000005,
+        "mar": -0.6627061122227674,
+        "calmar": -0.6627061122227674,
+        "total_R_per_year": -3.9344703770197484,
+        "universe": 37,
+        "aligned": 6
+      },
+      "decision": "NO-GO",
+      "reason": "OOS Sortino -1.65<1 OR OOS trades 6<10",
+      "robustness": null,
+      "mp1_full_trades": 35,
+      "mp1_oos_trades": 4,
+      "confluence_full": {
+        "box_n": 14,
+        "mp1_n": 35,
+        "intersection_n": 0,
+        "union_n": 49,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_oos": {
+        "box_n": 6,
+        "mp1_n": 4,
+        "intersection_n": 0,
+        "union_n": 10,
+        "overlap_pct_min": 0.0,
+        "overlap_pct_union": 0.0
+      },
+      "confluence_strategy_oos": null
+    }
+  }
+}

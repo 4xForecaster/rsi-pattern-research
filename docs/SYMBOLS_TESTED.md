@@ -123,7 +123,37 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
-## Box-pattern signal (H29, 2026-06-18) — 0/7 GO, orthogonal to M-P1
+## Box-pattern signal corrected spec (H30, 2026-06-20) — 0/7 GO across BOTH variants, healthy trade counts
+
+Dr. A flagged two errors in H29 (T1/2 used (P0+P3)/2 — contaminated by
+breakout phase; detector had no max-length cap → produced a 1024-bar
+mega-box). H30 fixes both. T1/2 = (P0+P2)/2 by default; max_length=250.
+Box-to-trade now supports two target ladders: **Variant A** (Dr. A's
+primary: 1.618/2.345/3.456 × height, anchored at P2) and **Variant B**
+(1.618/2.236/3.618 × height, anchored at P1). 8/8 unit tests.
+
+| Symbol | H29 OOS / n | H30 A OOS / n | H30 B OOS / n | A / B decision |
+|---|---|---|---|---|
+| DXY    | −0.46 /  3 | −0.78 / 29 | −0.89 / 31 | NO-GO / NO-GO |
+| EURUSD |   n/a /  0 | −1.42 / 29 | −1.20 / 32 | NO-GO / NO-GO |
+| GBPUSD | −1.21 /  2 | −0.70 / 18 | −0.56 / 18 | NO-GO / NO-GO |
+| USDJPY | −0.76 /  2 | −0.40 / 28 | −0.39 / 30 | NO-GO / NO-GO |
+| USDCAD | +0.43 /  4 | −0.17 / 19 | −0.12 / 21 | NO-GO / NO-GO |
+| AUDUSD | −0.19 /  6 | +0.32 / 32 | +0.70 / 32 | NO-GO / NO-GO |
+| NZDUSD | −1.65 /  6 | −0.12 / 28 | +0.10 / 29 | NO-GO / NO-GO |
+
+Detection became ~3–6× more granular (the cap fixes a dedup artifact
+that hid sub-boxes inside mega-boxes); OOS trade counts now sit at
+18–32 per pair — well above the 10 NO-GO floor — so the negative is
+NOT a small-n alibi. OOS Sortinos converged toward zero (range −1.42
+to +0.70). Variant B slightly out-performs A on 6/7 pairs (B anchors
+targets at P1, higher than P2, capturing more right tail when trades
+work; still not enough to flip any pair). The single-box trade trigger
+is shipped NO-GO with high confidence; the detector is now a stronger
+research asset (cleaner visuals — no mega-box) for the H31 regime-
+classifier use. Detail: results/H30_box_pattern_corrected.md.
+
+## Box-pattern signal H29 (2026-06-18) — 0/7 GO under original spec
 
 Dr. A's 4-point box signal (P0 swing low → P1 swing high → P2 50%
 retrace → P3 break of P1) + Hurst time-asymmetry filter (take LONG only

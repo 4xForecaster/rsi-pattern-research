@@ -151,16 +151,76 @@ def test_dedup_after_p3():
         assert p0 > prev_p3, "dedup rule violated"
 
 
-def test_box_to_trade_sets_structural_stop_and_fib_targets():
+def test_box_to_trade_variant_A_targets_from_p2_with_corrected_levels():
+    """H30 primary: 1.618 / 2.345 / 3.456 × box.height projected from P2."""
     df = _synth_long_box_bullish_asym()
     b = bp.detect_boxes_df(df, "long")[0]
-    trade = bp.box_to_trade(b, df, bias_filter=True)
+    trade = bp.box_to_trade(b, df, bias_filter=True, target_variant="A")
     assert trade is not None
-    # stop is P2 low; range = P1 − P2 low; targets are entry + {1.618, 2.236, 3.618} × range
+    # stop is P2 low; trail range = P1 − stop (unchanged across variants)
     assert abs(trade.initial_stop - df["low"].iloc[b.p2_idx]) < 1e-9
-    expected_range = b.p1_price - trade.initial_stop
-    assert abs(trade.range_size - expected_range) < 1e-9
-    # targets ordered ascending for a long
+    expected_trail_range = b.p1_price - trade.initial_stop
+    assert abs(trade.range_size - expected_trail_range) < 1e-9
+    # variant A targets: anchor = P2 price, levels = (1.618, 2.345, 3.456) × height
+    expected = [b.p2_price + lvl * b.height for lvl in (1.618, 2.345, 3.456)]
+    for t, e in zip(trade.targets, expected):
+        assert abs(t - e) < 1e-6
     assert trade.targets[0] < trade.targets[1] < trade.targets[2]
-    # spread = T1 − entry should be 1.618 × range
-    assert abs((trade.targets[0] - trade.entry_price) - 1.618 * expected_range) < 1e-6
+
+
+def test_box_to_trade_variant_B_targets_from_p1_with_h29_levels():
+    """H30 alternative: 1.618 / 2.236 / 3.618 × box.height projected from P1."""
+    df = _synth_long_box_bullish_asym()
+    b = bp.detect_boxes_df(df, "long")[0]
+    trade = bp.box_to_trade(b, df, bias_filter=True, target_variant="B")
+    assert trade is not None
+    expected = [b.p1_price + lvl * b.height for lvl in (1.618, 2.236, 3.618)]
+    for t, e in zip(trade.targets, expected):
+        assert abs(t - e) < 1e-6
+
+
+def test_corrected_tmid_uses_p2_endpoint_by_default():
+    """The H30 default is t_endpoint='p2' — verify the BoxPattern.t_mid field
+    matches (P0+P2)/2, NOT (P0+P3)/2 (the H29 legacy)."""
+    df = _synth_long_box_bullish_asym()
+    boxes_corrected = bp.detect_boxes_df(df, "long")
+    boxes_legacy = bp.detect_boxes_df(df, "long", t_endpoint="p3")
+    assert len(boxes_corrected) >= 1 and len(boxes_legacy) >= 1
+    bc = boxes_corrected[0]; bl = boxes_legacy[0]
+    assert bc.p0_idx == bl.p0_idx and bc.p2_idx == bl.p2_idx and bc.p3_idx == bl.p3_idx
+    assert abs(bc.t_mid - (bc.p0_idx + bc.p2_idx) / 2.0) < 1e-9
+    assert abs(bl.t_mid - (bl.p0_idx + bl.p3_idx) / 2.0) < 1e-9
+    # corrected t_mid sits strictly LEFT of legacy t_mid (since P2 < P3)
+    assert bc.t_mid < bl.t_mid
+
+
+def test_max_length_cap_drops_mega_boxes():
+    """A synthetic series engineered to form a single box of length > 250
+    must not be returned when ``max_length=250`` (the H30 default)."""
+    rng = np.random.RandomState(7)
+    n = 320
+    closes = 100 + rng.normal(0, 0.05, n)
+    highs = closes + 0.3; lows = closes - 0.3
+    # P0 deep trough at idx 5
+    lows[5] = 95.0; highs[5] = 95.5; closes[5] = 95.3
+    # long slow rally to P1 at idx 120
+    for i, val in enumerate(np.linspace(95.3, 110.0, 116)):
+        highs[5 + i] = val + 0.3; lows[5 + i] = val - 0.3; closes[5 + i] = val
+    highs[120] = 110.5; lows[120] = 109.5; closes[120] = 110.0
+    # slow correction to 50% (= 102.65) by idx 200
+    for i, val in enumerate(np.linspace(110.0, 102.65, 81)):
+        highs[120 + i] = val + 0.3; lows[120 + i] = val - 0.3; closes[120 + i] = val
+    lows[200] = 102.0; highs[200] = 102.6; closes[200] = 102.5
+    # slow rise → P3 break above P1 at idx 310 (length 310 − 5 = 305 > 250)
+    for i, val in enumerate(np.linspace(102.5, 110.8, 111)):
+        highs[200 + i] = val + 0.3; lows[200 + i] = val - 0.3; closes[200 + i] = val
+    highs[310] = 111.0; lows[310] = 110.4; closes[310] = 110.6
+    df = _df(highs.tolist(), lows.tolist(), closes.tolist())
+    # default cap drops it
+    assert len(bp.detect_boxes_df(df, "long")) == 0
+    # explicit cap of 350 lets it through
+    boxes = bp.detect_boxes_df(df, "long", max_length=350)
+    assert any(b.length > 250 for b in boxes)
+    # disabling cap (None) also lets it through
+    boxes_none = bp.detect_boxes_df(df, "long", max_length=None)
+    assert len(boxes_none) >= 1
