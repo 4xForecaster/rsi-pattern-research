@@ -123,6 +123,56 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## USDJPY box-strict H24 robustness re-verification (H31a, 2026-06-21) — DOWNGRADE_SWEEP (1/4)
+
+USDJPY under H31 box-strict (+5.03 OOS / 32 trades) was the first cell in
+the entire box-pattern arc to clear BOTH the +3.0 Sortino floor AND the
+30-trade GO floor. H31's inline H24 reported DOWNGRADE (1/4). H31a runs
+the locked H24 4-test gate standalone with full numbers and **reproduces
+1/4 → DOWNGRADE_SWEEP exactly**.
+
+| Test | Threshold | Number | Verdict |
+|---|---|---:|:---:|
+| Bootstrap p5 (N=10000 seed=42)        | ≥ +3.0  | **+1.78** (p50 +4.21, p95 +10.30) | FAIL |
+| Rolling 50%-OOS-span × 4 windows      | ≥ 3/4 ≥ +3.0 | **2/4** (+12.37, nan, +7.47, +1.73) | FAIL |
+| Gini trade contribution               | ≤ 0.70  | **0.7396** (single-30d-share 26%) | FAIL |
+| Per-trade drop-one min Sortino        | ≥ +2.5  | **+4.49** (drop 2021-10-01 R=+4.42) | PASS |
+
+The drop-one PASS rules out the small-sample-mirage pathology that sank
+NZDUSD at H24; positive evidence is real. But the bootstrap tail says
+the central +5.03 estimate is unreliable, the rolling timeline says the
+edge is heavily front-loaded (12.37 → 7.47 → 1.73 across OOS span), and
+the Gini just exceeds the 0.7 concentration cap. **Time- and regime-
+concentrated edge, not a stationary one.**
+
+Per-trade ledger diagnostic: all 32 OOS trades fired at 1× neutral_regime
+(strict-5/5 unanimity rarely fires bullish_regime; bearish_regime never
+fires). The H31 strict variant on USDJPY is effectively the M-P1 LONG
+base strategy without any sizing modification — the +5.03 OOS Sortino is
+the base strategy's OOS Sortino during the 2021–22 JPY decline, NOT
+evidence that translation aggregation *adds* directional content here.
+
+The 3 biggest winners (R = +3.83 / +3.96 / +4.42) are all 2021-Q1 →
+2022-Q1. The 2 full −1R losers are both 2024 entries that stopped out
+into BoJ-intervention-era reversals — the exact structural mismatch the
+`rsi_m_p1.yaml` USDJPY note already calls out ("long-only engine vs
+JPY's durable USD-up trend regime — long M-top entries fade into trend").
+
+**hurst-agent untouched.** USDJPY does NOT clear H24 SOLID_GO or even
+THIN_GO under box-strict; promotion to `regime_source: box_translation`
+remains gated on per-symbol SOLID_GO + Dr. A's approval. The H31
+staging branch [`h31/regime-source-switch`](https://github.com/4xForecaster/hurst-agent/pull/new/h31/regime-source-switch)
+stays as the integration vehicle; nothing on it is enabled live, and
+H31a does not change it. DXY's live cron unchanged.
+
+Visual proof: fig 35 shows 8 representative OOS USDJPY M-P1 LONG
+entries (3 biggest winners + 3 around median + 2 losers) with last-5
+box history color-coded by translation verdict and full trade
+annotations. Fig 34 shows the H24 4-panel robustness gate
+(bootstrap distribution + rolling-window bars + Gini-sorted
+contribution + drop-one timeline). Detail:
+[results/H31a_usdjpy_robustness.md](../results/H31a_usdjpy_robustness.md).
+
 ## Box-translation regime classifier (H31, 2026-06-21) — PASS_WITH_MIGRATION (3/7 GO at strict, +USDJPY, −GBPUSD/NZDUSD)
 
 Pre-registered application from `docs/BOX_PATTERN_APPLICATIONS.md` §2.

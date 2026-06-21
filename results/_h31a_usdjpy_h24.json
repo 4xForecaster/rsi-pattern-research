@@ -1,0 +1,560 @@
+{
+  "symbol": "USDJPY",
+  "scheme": "box_strict (H31)",
+  "oos_window": [
+    "2017-07-17",
+    "2026-05-18",
+    2299
+  ],
+  "n_trades": 32,
+  "baseline_sortino": 5.0333,
+  "h24": {
+    "bootstrap": {
+      "n_boot": 10000,
+      "seed": 42,
+      "nan_rate": 0.0,
+      "p5_decision": 1.7774796640044268,
+      "p50_decision": 4.208706475557534,
+      "p95_decision": 10.296916728971706,
+      "p5_finite": 1.7774796640044268,
+      "p50_finite": 4.208706475557534,
+      "p95_finite": 10.296916728971706,
+      "pass": false
+    },
+    "rolling": {
+      "window_days": 1613,
+      "windows": [
+        {
+          "start": "2017-07-17",
+          "end": "2021-12-16",
+          "n_trades": 15,
+          "sortino": 12.367
+        },
+        {
+          "start": "2019-01-05",
+          "end": "2023-06-06",
+          "n_trades": 12,
+          "sortino": null
+        },
+        {
+          "start": "2020-06-26",
+          "end": "2024-11-25",
+          "n_trades": 23,
+          "sortino": 7.467
+        },
+        {
+          "start": "2021-12-16",
+          "end": "2026-05-17",
+          "n_trades": 17,
+          "sortino": 1.725
+        }
+      ],
+      "n_ge_floor": 2,
+      "pass": false
+    },
+    "clustering": {
+      "contribution": [
+        0.578006412530625,
+        0.7103726906527102,
+        0.5396611332569303,
+        0.3424533114835235,
+        -1.0,
+        3.9604502543125477,
+        2.8370492866256045,
+        2.192902442131315,
+        2.284369893119447,
+        3.05636595584395,
+        3.828490646630427,
+        3.3212272766359936,
+        4.421855181253866,
+        3.4749024932693424,
+        3.8108359298359855,
+        3.4634996397694526,
+        1.1553997339841682,
+        1.4603290096861918,
+        1.102721864985443,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -0.03623853348118878,
+        3.3080326815487764,
+        -0.006384517339074501,
+        -0.14190218381791095,
+        -0.11554623767893521,
+        -0.21913358288309884,
+        -1.0,
+        3.141606080634501,
+        1.5377102259006061
+      ],
+      "gini_contribution": 0.7396,
+      "gini_profit_only": 0.5423,
+      "single_30d_window_profit_share": 0.262,
+      "pass": false
+    },
+    "sensitivity": {
+      "min_sortino": 4.488,
+      "min_drop_trade": {
+        "entry": "2021-10-01",
+        "exit": "2022-03-28",
+        "r_multiple": 4.4219,
+        "multiplier": 1.0
+      },
+      "per_trade": [
+        {
+          "dropped_entry": "2018-04-09",
+          "sortino": 4.966
+        },
+        {
+          "dropped_entry": "2018-04-13",
+          "sortino": 4.947
+        },
+        {
+          "dropped_entry": "2018-04-23",
+          "sortino": 4.968
+        },
+        {
+          "dropped_entry": "2018-06-26",
+          "sortino": 4.992
+        },
+        {
+          "dropped_entry": "2018-09-07",
+          "sortino": 5.834
+        },
+        {
+          "dropped_entry": "2021-01-29",
+          "sortino": 4.545
+        },
+        {
+          "dropped_entry": "2021-02-18",
+          "sortino": 4.685
+        },
+        {
+          "dropped_entry": "2021-02-25",
+          "sortino": 4.764
+        },
+        {
+          "dropped_entry": "2021-05-31",
+          "sortino": 4.753
+        },
+        {
+          "dropped_entry": "2021-06-07",
+          "sortino": 4.658
+        },
+        {
+          "dropped_entry": "2021-09-13",
+          "sortino": 4.561
+        },
+        {
+          "dropped_entry": "2021-09-24",
+          "sortino": 4.625
+        },
+        {
+          "dropped_entry": "2021-10-01",
+          "sortino": 4.488
+        },
+        {
+          "dropped_entry": "2021-10-08",
+          "sortino": 4.606
+        },
+        {
+          "dropped_entry": "2021-10-29",
+          "sortino": 4.564
+        },
+        {
+          "dropped_entry": "2023-02-14",
+          "sortino": 4.607
+        },
+        {
+          "dropped_entry": "2023-06-01",
+          "sortino": 4.892
+        },
+        {
+          "dropped_entry": "2023-08-21",
+          "sortino": 4.854
+        },
+        {
+          "dropped_entry": "2023-09-04",
+          "sortino": 4.898
+        },
+        {
+          "dropped_entry": "2024-01-26",
+          "sortino": 6.292
+        },
+        {
+          "dropped_entry": "2024-03-05",
+          "sortino": 6.292
+        },
+        {
+          "dropped_entry": "2024-03-29",
+          "sortino": 5.459
+        },
+        {
+          "dropped_entry": "2024-06-17",
+          "sortino": 5.459
+        },
+        {
+          "dropped_entry": "2024-09-26",
+          "sortino": 5.037
+        },
+        {
+          "dropped_entry": "2024-10-01",
+          "sortino": 4.7
+        },
+        {
+          "dropped_entry": "2024-10-07",
+          "sortino": 5.034
+        },
+        {
+          "dropped_entry": "2024-10-11",
+          "sortino": 5.052
+        },
+        {
+          "dropped_entry": "2024-10-21",
+          "sortino": 5.048
+        },
+        {
+          "dropped_entry": "2024-12-03",
+          "sortino": 5.068
+        },
+        {
+          "dropped_entry": "2024-12-11",
+          "sortino": 5.433
+        },
+        {
+          "dropped_entry": "2025-06-27",
+          "sortino": 4.73
+        },
+        {
+          "dropped_entry": "2025-10-16",
+          "sortino": 4.922
+        }
+      ],
+      "pass": true
+    },
+    "conditions_hold": 1,
+    "verdict": "DOWNGRADE_SWEEP"
+  },
+  "trades": [
+    {
+      "entry": "2018-04-09",
+      "exit": "2019-01-11",
+      "entry_price": 106.968,
+      "exit_price": 108.298,
+      "r_multiple": 0.578,
+      "multiplier": 1.0,
+      "regime_label": "unknown",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2018-04-13",
+      "exit": "2019-01-17",
+      "entry_price": 107.222,
+      "exit_price": 109.037,
+      "r_multiple": 0.7104,
+      "multiplier": 1.0,
+      "regime_label": "unknown",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2018-04-23",
+      "exit": "2019-01-25",
+      "entry_price": 107.869,
+      "exit_price": 109.597,
+      "r_multiple": 0.5397,
+      "multiplier": 1.0,
+      "regime_label": "unknown",
+      "exit_reason": "time (targets T1)"
+    },
+    {
+      "entry": "2018-06-26",
+      "exit": "2019-04-01",
+      "entry_price": 109.643,
+      "exit_price": 110.995,
+      "r_multiple": 0.3425,
+      "multiplier": 1.0,
+      "regime_label": "unknown",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2018-09-07",
+      "exit": "2019-01-02",
+      "entry_price": 110.495,
+      "exit_price": 109.381,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2021-01-29",
+      "exit": "2021-06-23",
+      "entry_price": 104.291,
+      "exit_price": 111.0277,
+      "r_multiple": 3.9605,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2021-02-18",
+      "exit": "2021-11-24",
+      "entry_price": 105.861,
+      "exit_price": 115.141,
+      "r_multiple": 2.837,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2021-02-25",
+      "exit": "2021-12-01",
+      "entry_price": 105.944,
+      "exit_price": 113.299,
+      "r_multiple": 2.1929,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2021-05-31",
+      "exit": "2022-03-04",
+      "entry_price": 109.907,
+      "exit_price": 115.474,
+      "r_multiple": 2.2844,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2021-06-07",
+      "exit": "2022-03-11",
+      "entry_price": 109.617,
+      "exit_price": 116.179,
+      "r_multiple": 3.0564,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2021-09-13",
+      "exit": "2021-10-20",
+      "entry_price": 109.915,
+      "exit_price": 114.4556,
+      "r_multiple": 3.8285,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2021-09-24",
+      "exit": "2022-01-04",
+      "entry_price": 110.326,
+      "exit_price": 115.63,
+      "r_multiple": 3.3212,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2021-10-01",
+      "exit": "2022-03-28",
+      "entry_price": 111.461,
+      "exit_price": 123.5415,
+      "r_multiple": 4.4219,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2021-10-08",
+      "exit": "2022-03-24",
+      "entry_price": 111.662,
+      "exit_price": 121.8539,
+      "r_multiple": 3.4749,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2021-10-29",
+      "exit": "2022-04-28",
+      "entry_price": 113.616,
+      "exit_price": 130.7762,
+      "r_multiple": 3.8108,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2023-02-14",
+      "exit": "2023-11-20",
+      "entry_price": 132.337,
+      "exit_price": 149.942,
+      "r_multiple": 3.4635,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2023-06-01",
+      "exit": "2024-03-06",
+      "entry_price": 139.127,
+      "exit_price": 150.049,
+      "r_multiple": 1.1554,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2023-08-21",
+      "exit": "2024-05-24",
+      "entry_price": 145.305,
+      "exit_price": 156.973,
+      "r_multiple": 1.4603,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1)"
+    },
+    {
+      "entry": "2023-09-04",
+      "exit": "2024-06-07",
+      "entry_price": 146.057,
+      "exit_price": 155.697,
+      "r_multiple": 1.1027,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2024-01-26",
+      "exit": "2024-09-16",
+      "entry_price": 147.723,
+      "exit_price": 140.29,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2024-03-05",
+      "exit": "2024-09-16",
+      "entry_price": 150.466,
+      "exit_price": 140.29,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2024-03-29",
+      "exit": "2024-08-05",
+      "entry_price": 151.44,
+      "exit_price": 142.868,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2024-06-17",
+      "exit": "2024-07-31",
+      "entry_price": 157.546,
+      "exit_price": 150.854,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2024-09-26",
+      "exit": "2025-07-07",
+      "entry_price": 144.683,
+      "exit_price": 144.498,
+      "r_multiple": -0.0362,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2024-10-01",
+      "exit": "2024-12-19",
+      "entry_price": 143.71,
+      "exit_price": 157.3788,
+      "r_multiple": 3.308,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "T3"
+    },
+    {
+      "entry": "2024-10-07",
+      "exit": "2025-07-16",
+      "entry_price": 148.82,
+      "exit_price": 148.761,
+      "r_multiple": -0.0064,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2024-10-11",
+      "exit": "2025-07-22",
+      "entry_price": 148.704,
+      "exit_price": 147.409,
+      "r_multiple": -0.1419,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2024-10-21",
+      "exit": "2025-07-30",
+      "entry_price": 149.6,
+      "exit_price": 148.442,
+      "r_multiple": -0.1155,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2024-12-03",
+      "exit": "2025-09-11",
+      "entry_price": 149.508,
+      "exit_price": 147.332,
+      "r_multiple": -0.2191,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets none)"
+    },
+    {
+      "entry": "2024-12-11",
+      "exit": "2025-04-22",
+      "entry_price": 151.807,
+      "exit_price": 140.323,
+      "r_multiple": -1.0,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "initial_stop"
+    },
+    {
+      "entry": "2025-06-27",
+      "exit": "2026-04-06",
+      "entry_price": 144.694,
+      "exit_price": 159.78,
+      "r_multiple": 3.1416,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1,T2)"
+    },
+    {
+      "entry": "2025-10-16",
+      "exit": "2026-05-18",
+      "entry_price": 150.974,
+      "exit_price": 158.844,
+      "r_multiple": 1.5377,
+      "multiplier": 1.0,
+      "regime_label": "neutral_regime",
+      "exit_reason": "time (targets T1)"
+    }
+  ]
+}
