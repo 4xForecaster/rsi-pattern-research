@@ -613,6 +613,88 @@ def test_bug1_p3_price_equals_p1_price_for_rendering():
             f"!= p1_price={b.p1_price}")
 
 
+def _synth_long_shallow_low_then_deeper_low_then_peak():
+    """LONG fixture for Bug 3 (H30e). A shallow swing low at idx 10
+    (~95) is the find_peaks-identified P0 seed. Bars 11..19 rally to ~99.
+    Bar 20 has a wide-range candle: high 100 (new high, would update
+    running_max) AND low 88 (deeper low than P0=95 — should invalidate).
+    The pre-H30e detector locked P1 here because the new-high check ran
+    first and skipped invalidation. The H30e fix checks invalidation
+    first; P0 floats to bar 20 (low 88), running_max restarts. Bars
+    21..50 then rally to a real dominant peak (~110) and trigger retrace
+    at idx ~60.
+
+    Expected H30e box: p0_idx >= 20 (not 10), p0_price <= 88.5."""
+    n = 120
+    rng = np.random.RandomState(53)
+    closes = 100 + rng.normal(0, 0.05, n)
+    H = closes + 0.3; L = closes - 0.3
+    # P0 at idx 10 (shallow swing low at 95)
+    L[10] = 95.0; H[10] = 95.5; closes[10] = 95.3
+    # Modest rally 11→19 from 95 to 99
+    for i, v in enumerate(np.linspace(95.3, 99.0, 9)):
+        H[11 + i] = v + 0.3; L[11 + i] = v - 0.3; closes[11 + i] = v
+    # Bar 20: wide-range candle — high 100 (new running_max), low 88 (deeper)
+    H[20] = 100.0; L[20] = 88.0; closes[20] = 94.0
+    # Rally from 88 to 110 by idx 50
+    for i, v in enumerate(np.linspace(88.0, 110.0, 30)):
+        H[21 + i] = v + 0.3; L[21 + i] = v - 0.3; closes[21 + i] = v
+    H[50] = 110.5; L[50] = 109.5; closes[50] = 110.0
+    # Pullback past 50% from running_max=110, p0=88 → level=99
+    for i, v in enumerate(np.linspace(110.0, 98.0, 11)):
+        H[50 + i] = v + 0.3; L[50 + i] = v - 0.3; closes[50 + i] = v
+    L[60] = 98.0; H[60] = 98.6; closes[60] = 98.3
+    # P3 break above 110 by idx 75
+    for i, v in enumerate(np.linspace(98.3, 112.0, 16)):
+        H[60 + i] = v + 0.3; L[60 + i] = v - 0.3; closes[60 + i] = v
+    H[75] = 112.5; L[75] = 111.5; closes[75] = 112.0
+    return _df(H.tolist(), L.tolist(), closes.tolist())
+
+
+def test_bug3_p0_floats_to_deepest_low_when_wide_range_bar_pierces():
+    """H30e Bug 3 regression: a single bar with simultaneous new high AND
+    deeper low must respawn P0 at the deeper low, not slip past via the
+    new-high branch. Pre-H30e the detector skipped invalidation in this
+    case and the resulting box had p0_idx=10 (shallow); post-H30e it
+    floats to bar 20 (deep)."""
+    df = _synth_long_shallow_low_then_deeper_low_then_peak()
+    boxes = bp.detect_boxes_df(df, "long")
+    assert len(boxes) >= 1
+    b = boxes[0]
+    # The deeper low at idx 20 (price 88) must become P0
+    assert b.p0_idx >= 20, (
+        f"H30e regression: p0_idx={b.p0_idx} should be ≥20 (the wide-range "
+        f"bar). Pre-H30e behaviour locked P0 at the shallower seed at idx 10.")
+    assert b.p0_price <= 88.5, (
+        f"H30e regression: p0_price={b.p0_price} should be at most ~88 "
+        f"(the deeper low). Pre-H30e p0_price would be ~95 (the seed).")
+
+
+def test_bug3_chain_continuation_gap_scan_catches_deeper_low_between_p2_and_p3():
+    """Cont-track gap pre-scan: bars in [previous P2, previous P3) are
+    part of the previous box's breakout phase and otherwise missed by
+    the forward walker. If a deeper low than previous P2 exists there,
+    it must become the new cont's P0 (H30e fix)."""
+    # Use the 3-box LONG chain fixture and verify each cont box's
+    # invariant: there is NO bar in [P0_idx, P1_idx] with low < P0_price.
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    for b in boxes:
+        if b.direction == "long":
+            window_lows = df["low"].iloc[b.p0_idx:b.p1_idx + 1]
+            actual_min = float(window_lows.min())
+            assert actual_min >= b.p0_price - 1e-9, (
+                f"chain box {b.chain_id}/{b.chain_index}: actual min low "
+                f"{actual_min:.4f} < p0_price {b.p0_price:.4f} in [P0..P1] "
+                f"window — H30e fix did not catch it")
+        else:
+            window_highs = df["high"].iloc[b.p0_idx:b.p1_idx + 1]
+            actual_max = float(window_highs.max())
+            assert actual_max <= b.p0_price + 1e-9, (
+                f"chain box {b.chain_id}/{b.chain_index}: actual max high "
+                f"{actual_max:.4f} > p0_price {b.p0_price:.4f} in [P0..P1]")
+
+
 def test_box_to_trade_variant_A_trail_anchored_on_p2():
     """Variant A's trail-activation price must be P2 ± 2.200·height
     (NOT entry ± factor·range_size). Build a series where stop never fires,

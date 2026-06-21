@@ -366,6 +366,17 @@ def _detect_box_corrected(
         while i < n:
             if (i - p0_idx) > cap:
                 break  # abandon, look for next seed past this candidate
+            # H30e (2026-06-20) — invalidation check FIRST, BEFORE the
+            # new-high check. Otherwise a bar with a simultaneous new high
+            # AND a deeper low than P0 silently updates running_max but
+            # skips invalidation, locking P0 at a shallower low while a
+            # deeper one exists in the impulse (Dr. A's "P0 should rest at
+            # the lowest low" complaint). The respawn captures the bar's
+            # new high implicitly: re_price = running_at(i) when the
+            # outer loop respawns at this bar.
+            if invalidated(i, p0p):
+                respawned = i  # respawn at this bar (new lower low / higher high)
+                break
             current = running_at(i)
             if is_better(current, re_price):
                 re_price = current
@@ -373,10 +384,6 @@ def _detect_box_corrected(
                 re_updated = True
                 i += 1
                 continue
-            # Invalidation check FIRST (per spec wording: "before the 50% retrace triggers")
-            if invalidated(i, p0p):
-                respawned = i  # respawn at this bar (new lower low / higher high)
-                break
             # 50% retrace check — gated on re_updated (Bug 2 fix)
             if re_updated:
                 level = retrace(p0p, re_price)
@@ -514,6 +521,10 @@ def _walk_first_box(highs: np.ndarray, lows: np.ndarray,
     while i < n:
         if (i - p0_idx) > cap:
             return None
+        # H30e: invalidation FIRST so a bar with simultaneous new high and
+        # deeper low doesn't slip past via the new-high branch.
+        if _invalidates(direction, highs, lows, i, p0_price):
+            return None  # caller should respawn from next seed (cleaner here)
         current = _running_at(direction, highs, lows, i)
         if _is_better(direction, current, re_price):
             re_price = current
@@ -521,8 +532,6 @@ def _walk_first_box(highs: np.ndarray, lows: np.ndarray,
             re_updated = True
             i += 1
             continue
-        if _invalidates(direction, highs, lows, i, p0_price):
-            return None  # caller should respawn from next seed (cleaner here)
         if re_updated:
             level = _retrace_level(direction, p0_price, re_price)
             if _retrace_hit(direction, highs, lows, i, level):
@@ -559,6 +568,16 @@ def _walk_chain_continuation(
 
     cont_p0 = current_box.p2_idx
     cont_p0_price = current_box.p2_price
+    # H30e: pre-scan the gap [cont_p0+1, start_bar) for a deeper low /
+    # higher high than the canonical "P0 = previous P2" value. Bars in
+    # this gap are part of the previous box's breakout phase and would
+    # otherwise be missed by the forward walker, leaving cont_p0 at a
+    # shallower swing than the actual lowest low in the leading-up-to-P1
+    # region.
+    for k in range(cont_p0 + 1, start_bar):
+        if _invalidates(cont_dir, highs, lows, k, cont_p0_price):
+            cont_p0 = k
+            cont_p0_price = _p0_price_at(cont_dir, highs, lows, k)
     cont_re_idx = cont_p0
     cont_re_price = _running_at(cont_dir, highs, lows, cont_p0)
     cont_re_updated = False    # H30d gate (see _detect_box_corrected)
@@ -593,19 +612,22 @@ def _walk_chain_continuation(
 
         # ---- Continuation track update ----
         if cont_alive:
-            cur_cont = _running_at(cont_dir, highs, lows, j)
-            if _is_better(cont_dir, cur_cont, cont_re_price):
-                cont_re_price = cur_cont
+            # H30e: invalidation FIRST (same priority fix as the standalone
+            # detector — a bar with simultaneous new high and deeper low
+            # must respawn at the deeper low, not slip past via the new-high
+            # branch).
+            if _invalidates(cont_dir, highs, lows, j, cont_p0_price):
+                cont_p0 = j
+                cont_p0_price = _p0_price_at(cont_dir, highs, lows, j)
                 cont_re_idx = j
-                cont_re_updated = True
+                cont_re_price = _running_at(cont_dir, highs, lows, j)
+                cont_re_updated = False
             else:
-                if _invalidates(cont_dir, highs, lows, j, cont_p0_price):
-                    # Respawn cont at this bar
-                    cont_p0 = j
-                    cont_p0_price = _p0_price_at(cont_dir, highs, lows, j)
+                cur_cont = _running_at(cont_dir, highs, lows, j)
+                if _is_better(cont_dir, cur_cont, cont_re_price):
+                    cont_re_price = cur_cont
                     cont_re_idx = j
-                    cont_re_price = _running_at(cont_dir, highs, lows, j)
-                    cont_re_updated = False
+                    cont_re_updated = True
                 elif cont_re_updated:
                     cont_level = _retrace_level(cont_dir, cont_p0_price, cont_re_price)
                     if _retrace_hit(cont_dir, highs, lows, j, cont_level):

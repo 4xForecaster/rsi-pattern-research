@@ -551,6 +551,160 @@ regime-classifier remains the recommended direction; the box detector
 is a cleaner research substrate after H30d but its single-trigger
 trade strategy is robustly dead.
 
+## H30e (2026-06-20) — third detector bug Dr. A caught: P0 not at deepest low
+
+Dr. A's third catch in the H30d figures: "Black arrow shows price's
+lowest-low which is where point-0 should rest in a bullish scenario."
+The detector locked P0 at a shallower swing low while a deeper low
+existed within the [P0..P1] impulse window.
+
+### Diagnostic
+
+Over the 265 H30d-corrected DXY boxes, **103 (39%) violated the
+"P0 = lowest low in [P0..P1]" rule**:
+
+| Direction | Violators | Worst delta |
+|---|---|---|
+| LONG  | 69 / 165 | 5.42 (chain_id=5 idx=2: P0_price=88.28, actual min low=82.86) |
+| SHORT | 34 / 100 | 0.42 (chain_id=12 idx=2: P0_price=96.11, actual max high=96.53) |
+
+### Root cause
+
+Two interacting bugs in the corrected-detector code paths:
+
+1. **New-high check ran BEFORE invalidation.** A bar with simultaneous
+   new high AND deeper low than P0 silently updated `running_max` and
+   continued — the deeper low never floated P0 down because the
+   invalidation branch was unreachable in that bar's iteration.
+2. **Chain-continuation gap unscanned.** The cont walker started at
+   `previous_P3 + 1`. Bars in `[previous_P2 + 1, previous_P3]` were
+   part of the previous box's breakout phase and never checked. If a
+   deeper low than the canonical `cont_p0 = previous_P2_price` existed
+   there, the walker missed it entirely.
+
+### Fix (Option A — continuous P0 update)
+
+1. **Swap priority** in `_detect_box_corrected`, `_walk_first_box`, and
+   `_walk_chain_continuation`: invalidation FIRST, new-high SECOND.
+   When a bar has both, the deeper low respawns P0 at that bar; the
+   bar's new high becomes the new `running_max` via the respawn (no
+   information lost).
+2. **Pre-scan the gap** in `_walk_chain_continuation`: before starting
+   the forward walk, iterate `[cont_p0_idx + 1, start_bar)` and float
+   `cont_p0` down to the deepest low (or up to the highest high for
+   SHORT cont) seen there. The cont's P0 is then guaranteed to be the
+   lowest low in the entire [P0, P1] window.
+
+Legacy detector unchanged (it uses `find_peaks` for P1 and prominence-
+vetted seeds — immune to both mechanisms).
+
+### Regression tests (2 new, 22/22 total pass)
+
+- `test_bug3_p0_floats_to_deepest_low_when_wide_range_bar_pierces` —
+  fixture with a single wide-range bar that has both a new high and a
+  low below P0. Pre-H30e the box locks at the shallow seed; post-H30e
+  P0 floats to the wide bar.
+- `test_bug3_chain_continuation_gap_scan_catches_deeper_low_between_p2_and_p3`
+  — asserts the invariant `min(low in [P0..P1]) >= P0_price` (LONG)
+  and the mirror for SHORT on the 3-box chain fixture.
+
+### Verification on real DXY data
+
+| Metric | H30d | H30e |
+|---|---:|---:|
+| Total chained boxes | 265 | 253 |
+| LONG violators (deeper low in [P0..P1]) | 69 / 165 | **0 / 135** |
+| SHORT violators (higher high in [P0..P1]) | 34 / 100 | **0 / 118** |
+| Total violators | 103 / 265 (39%) | **0 / 253 (0%) ✓** |
+
+### Backtest impact
+
+**H30b standalone Variant A:**
+
+| Sym | H30d | **H30e** | Δ |
+|---|---:|---:|---:|
+| DXY    | −0.61 / 40 | **−0.50 / 37** | +0.11 |
+| EURUSD | −0.17 / 25 | **−0.19 / 23** | −0.02 |
+| GBPUSD | +1.24 / 24 SWEEP | **+1.29 / 25** SWEEP | +0.05 |
+| USDJPY | −0.15 / 29 | **−0.13 / 27** | +0.02 |
+| USDCAD | −0.29 / 26 | **−0.51 / 27** | −0.22 |
+| AUDUSD | −0.30 / 20 | **−0.33 / 19** | −0.03 |
+| NZDUSD | −0.97 / 23 | **−0.88 / 21** | +0.09 |
+
+Modest shifts on most pairs; GBPUSD A holds SWEEP at +1.29.
+
+**H30c chain-conditional Variant A:**
+
+| Sym | H30b H30e | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---:|---:|---:|
+| DXY    | −0.50 / 37 | −0.21 / 33 | −0.59 / 18 | −0.61 / 10 |
+| EURUSD | −0.19 / 23 | +0.19 / 31 | −0.72 / 16 | −1.15 / 9 |
+| **GBPUSD** | +1.29 / 25 SWEEP | +0.90 / 22 | **+1.90 / 12 SWEEP** | +0.35 / 6 |
+| USDJPY | −0.13 / 27 | +0.78 / 19 | +0.23 / 8 | +0.05 / 3 |
+| USDCAD | −0.51 / 27 | −0.66 / 24 | −1.06 / 13 | −0.82 / 6 |
+| AUDUSD | −0.33 / 19 | +0.23 / 27 | +0.81 / 15 | +0.79 / 4 |
+| NZDUSD | −0.88 / 21 | −0.32 / 20 | −0.31 / 15 | +0.09 / 8 |
+
+**GBPUSD N≥2 surfaces +1.90 / 12 SWEEP** under the corrected detector
+— the only cross-floor cell across the (pair × lens) matrix. Still
+below the +3.0 GO Sortino floor and the 30-OOS-trade GO trade floor,
+so SWEEP not GO. DXY chain context stays negative (consistent with
+H30d's invalidation of the H30c +3.34 headline).
+
+**Cell verdict matrix:** 0 GO, 2 SWEEP (GBPUSD standalone A at +1.29,
+GBPUSD chain N≥2 at +1.90). Same pair, same direction; consistent
+weak-positive signal that doesn't reach a tradeable bar.
+
+### Pattern across the H30 series
+
+The sequence H30a → b → c → d → e is the clearest demonstration in the
+program of why visual review of detector output matters. Each catch:
+
+| Rev | Bug | Eliminated artifact |
+|---|---|---|
+| H30b | `find_peaks` P1 vs running-max | 2008-style "wrong dominant peak" boxes |
+| H30c | (chain extension, not a bug) | n/a |
+| H30d | P1 collapsed to P0 (1-bar swing) | 132 micro-boxes |
+| H30d | P3 marker plotted at wrong y | 397 mis-rendered P3 levels |
+| **H30e** | P0 not at deepest low | **103 wrong-P0 boxes** |
+
+Cumulative effect: the H30c "DXY N≥2 +3.34 SWEEP" claim collapses to
+−0.59 NO-GO under H30e. **The strongest cross-pair effect is now
+GBPUSD's persistent +1.0–1.9 Sortino range across both standalone and
+chain-N≥2 lenses** — still NO-GO/SWEEP, but the only signal that
+survives all five detector corrections.
+
+### Visuals re-rendered with H30e detector
+
+All 5 PNGs regenerated and re-copied to `~/Documents/4xForecaster/`:
+- `figures/26_box_examples_dxy.png` — recent-5 panels show boxes whose
+  P0 sits at the deepest low in each window. No remaining "shallow P0"
+  cases.
+- `figures/27_box_history_dxy.png` — 253 boxes (was 265). Visibly
+  cleaner geometry.
+- `figures/28/29/30_box_*_examples_5tf.png` — multi-timeframe panels
+  refreshed; M5 stays empty (still too thin / narrow window).
+
+### Honest verdict at H30e
+
+After five rounds of bug catches and corrections triggered by Dr. A's
+visual review:
+- The box-pattern detector is structurally clean (0 micro-boxes, 0
+  P0-not-deepest-low cases, P3 markers correct, P1 = running max past
+  the first local peak, mega-boxes capped, find_peaks legacy
+  reproducible).
+- The box-pattern single-box and chain-conditional **trade strategies
+  are decisively NO-GO** on every pair at every lens. 0 GO, 2 SWEEPs
+  (both GBPUSD; A standalone at +1.29 and chain N≥2 at +1.90).
+- The strongest positive Sortino anywhere in the entire arc is GBPUSD
+  chain N≥2 at +1.90 — well below the +3.0 GO floor and on only 12
+  OOS trades (< 30 GO trade floor).
+- Detector substrate quality is now genuinely high; trade-strategy
+  edge is genuinely absent. **H31 regime-classifier remains the
+  recommended direction** — the box detector's structural strength is
+  in providing clean chain/translation signals to aggregate, not in
+  generating per-box trade triggers.
+
 ## Sources
 
 Visual confirmation (regenerated):

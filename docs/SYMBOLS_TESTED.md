@@ -123,6 +123,47 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## Box detector third bug fix (H30e, 2026-06-20) — P0 = lowest low, 0 GO 2 SWEEP (both GBPUSD)
+
+Dr. A's third visual catch: "Black arrow shows price's lowest-low which
+is where point-0 should rest." Detector violated this on **103/265
+boxes (39%) at H30d** — biggest gap was 5.42 dollars (chain id 5
+idx 2). Two interacting causes: (1) new-high check ran BEFORE
+invalidation, so wide-range bars with simultaneous new high + deeper
+low skipped invalidation; (2) chain-cont gap `[prev_P2+1, prev_P3]`
+was never scanned for deeper lows. Both fixed in
+`_detect_box_corrected`, `_walk_first_box`, `_walk_chain_continuation`
+(invalidation-first ordering + gap pre-scan in cont). Legacy detector
+unaffected. 22/22 tests pass.
+
+Verification: H30e DXY has **0/253 violators** (was 103/265). 100%
+elimination.
+
+H30b standalone (Variant A): GBPUSD A holds SWEEP +1.29/25 (was
++1.24/24 at H30d). DXY -0.50 (was -0.61), others within ±0.22.
+
+H30c chain-conditional under H30e:
+
+| Sym | H30b H30e | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---:|---:|---:|
+| DXY    | −0.50 / 37 | −0.21 / 33 | −0.59 / 18 | −0.61 / 10 |
+| EURUSD | −0.19 / 23 | +0.19 / 31 | −0.72 / 16 | −1.15 / 9 |
+| **GBPUSD** | +1.29 / 25 SWEEP | +0.90 / 22 | **+1.90 / 12 SWEEP** | +0.35 / 6 |
+| USDJPY | −0.13 / 27 | +0.78 / 19 | +0.23 / 8 | +0.05 / 3 |
+| USDCAD | −0.51 / 27 | −0.66 / 24 | −1.06 / 13 | −0.82 / 6 |
+| AUDUSD | −0.33 / 19 | +0.23 / 27 | +0.81 / 15 | +0.79 / 4 |
+| NZDUSD | −0.88 / 21 | −0.32 / 20 | −0.31 / 15 | +0.09 / 8 |
+
+**0 GO, 2 SWEEPs across (pair × lens) — both GBPUSD** (standalone A at
++1.29 and chain N≥2 at +1.90). Same pair, same direction, consistent
+weak-positive signal that doesn't clear the GO bar. DXY chain context
+stays negative, confirming H30d's invalidation of the buggy +3.34
+headline. Honest verdict at H30e: single-box and chain-conditional
+trade strategies are decisively NO-GO; the detector substrate is
+structurally clean for downstream regime-classifier work. H31 remains
+the recommended direction. Detail:
+results/H30_box_pattern_corrected.md § "H30e".
+
 ## Box detector bug-fix pass (H30d, 2026-06-20) — H30c headlines invalidated, 0 GO 0 SWEEP everywhere
 
 Dr. A flagged two detector bugs visible in the regenerated H30c figures:
