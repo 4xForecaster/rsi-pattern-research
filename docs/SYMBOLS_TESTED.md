@@ -132,15 +132,28 @@ Box-to-trade now supports two target ladders: **Variant A** (Dr. A's
 primary: 1.618/2.345/3.456 × height, anchored at P2) and **Variant B**
 (1.618/2.236/3.618 × height, anchored at P1). 8/8 unit tests.
 
-| Symbol | H29 OOS / n | H30 A OOS / n | H30 B OOS / n | A / B decision |
-|---|---|---|---|---|
-| DXY    | −0.46 /  3 | −0.78 / 29 | −0.89 / 31 | NO-GO / NO-GO |
-| EURUSD |   n/a /  0 | −1.42 / 29 | −1.20 / 32 | NO-GO / NO-GO |
-| GBPUSD | −1.21 /  2 | −0.70 / 18 | −0.56 / 18 | NO-GO / NO-GO |
-| USDJPY | −0.76 /  2 | −0.40 / 28 | −0.39 / 30 | NO-GO / NO-GO |
-| USDCAD | +0.43 /  4 | −0.17 / 19 | −0.12 / 21 | NO-GO / NO-GO |
-| AUDUSD | −0.19 /  6 | +0.32 / 32 | +0.70 / 32 | NO-GO / NO-GO |
-| NZDUSD | −1.65 /  6 | −0.12 / 28 | +0.10 / 29 | NO-GO / NO-GO |
+A-old = original H30 (3 targets, no effective trail). A-new = 2026-06-20
+tightening (2 targets 1.618/2.236, trail at P2 + 2.200·height). B
+unchanged.
+
+| Symbol | H29 OOS / n | A-old OOS / n | **A-new OOS / n / MDD** | B OOS / n / MDD | All decisions |
+|---|---|---|---|---|---|
+| DXY    | −0.46 /  3 | −0.78 / 29 | **−0.90 / 29 / −17.8%** | −0.89 / 31 / −18.7% | NO-GO |
+| EURUSD |   n/a /  0 | −1.42 / 29 | **−1.48 / 29 / −22.0%** | −1.20 / 32 / −24.2% | NO-GO |
+| GBPUSD | −1.21 /  2 | −0.70 / 18 | **−0.38 / 18 / −6.4%**  | −0.56 / 18 / −9.4%  | NO-GO |
+| USDJPY | −0.76 /  2 | −0.40 / 28 | **−0.63 / 28 / −11.3%** | −0.39 / 30 / −10.0% | NO-GO |
+| USDCAD | +0.43 /  4 | −0.17 / 19 | **+0.11 / 19 / −5.6%**  | −0.12 / 21 / −7.0%  | NO-GO |
+| AUDUSD | −0.19 /  6 | +0.32 / 32 | **+0.61 / 32 / −8.3%**  | +0.70 / 32 / −9.0%  | NO-GO |
+| NZDUSD | −1.65 /  6 | −0.12 / 28 | **−0.59 / 28 / −10.7%** | +0.10 / 29 / −10.7% | NO-GO |
+
+Did the T3 cut help or hurt A? **Mixed, net trivial** on Sortino (mean Δ
++0.01, median −0.06; 3 pairs helped, 4 hurt). But the early trail
+activation IS doing something visible: **A-new MaxDD beats B's on 5/7
+pairs**. Trail protects drawdown by ratcheting the stop near T2_A; the
+right-tail cost (runners that would have gone to A-old's 3.456× target
+get trail-stopped earlier) partly washes the drawdown win out of
+Sortino. B still slightly edges A-new on Sortino (4 wins vs 2 vs 1
+tie). Neither variant clears GO on any pair.
 
 Detection became ~3–6× more granular (the cap fixes a dedup artifact
 that hid sub-boxes inside mega-boxes); OOS trade counts now sit at

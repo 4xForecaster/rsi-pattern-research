@@ -9,7 +9,7 @@
 [`figures/27_box_history_dxy.png`](../figures/27_box_history_dxy.png)
 **Compare against:** [`results/H29_box_pattern_validation.md`](H29_box_pattern_validation.md) (preserved)
 
-## TL;DR — corrections made, both variants still 0/7 GO
+## TL;DR — corrections made, both variants still 0/7 GO (re-confirmed after Variant A tightening)
 
 The H29 implementation had two material errors flagged by Dr. A. Both
 are fixed:
@@ -22,10 +22,14 @@ are fixed:
   now correctly enumerates the sub-boxes those mega-boxes were eating.
 
 Two target ladders were tested side-by-side per Dr. A's spec:
-- **Variant A** (primary): `1.618 / 2.345 / 3.456 × box.height`, anchored
-  on P2.
-- **Variant B** (alternative): `1.618 / 2.236 / 3.618 × box.height`,
-  anchored on P1.
+- **Variant A** (primary). *Original*: `1.618 / 2.345 / 3.456 × box.height`,
+  anchored on P2, trail at the default 3.600× entry-anchored (effectively
+  never armed since A's T3 sat far closer to entry than B's). *Tightened
+  2026-06-20*: TWO targets `(1.618, 2.236) × height`, T3 dropped; trail
+  activates at `P2 + 2.200·height` (mirror of B's "3.600 near 3.618" but
+  P2-anchored because A's targets aren't entry-anchored).
+- **Variant B** (alternative, unchanged): `1.618 / 2.236 / 3.618 × box.height`,
+  anchored on P1, trail at entry + 3.600 × range (M-P1 convention).
 
 **Both variants still produce 0/7 GO at the locked thresholds**, but the
 **failure mode shifted** — H29 failed primarily on OOS trade count
@@ -63,25 +67,48 @@ boxes the detector reports.
 OOS Sortino (and trade count) for each variant, with the H29 single
 number shown for the delta read.
 
-| Symbol | H29 OOS Sortino / n | H30 A OOS / n | H30 B OOS / n | Decision A / B |
-|---|---|---|---|---|
-| DXY    | −0.46 /  3 | **−0.78 / 29** | **−0.89 / 31** | NO-GO / NO-GO |
-| EURUSD |   n/a  /  0 | **−1.42 / 29** | **−1.20 / 32** | NO-GO / NO-GO |
-| GBPUSD | −1.21 /  2 | **−0.70 / 18** | **−0.56 / 18** | NO-GO / NO-GO |
-| USDJPY | −0.76 /  2 | **−0.40 / 28** | **−0.39 / 30** | NO-GO / NO-GO |
-| USDCAD | +0.43 /  4 | **−0.17 / 19** | **−0.12 / 21** | NO-GO / NO-GO |
-| AUDUSD | −0.19 /  6 | **+0.32 / 32** | **+0.70 / 32** | NO-GO / NO-GO |
-| NZDUSD | −1.65 /  6 | **−0.12 / 28** | **+0.10 / 29** | NO-GO / NO-GO |
+A-old = the original H30 variant A (3 targets, no effective trail).
+A-new = the 2026-06-20 tightening (2 targets, trail near T2_A). B is
+unchanged.
+
+| Symbol | H29 OOS / n | A-old OOS / n | **A-new OOS / n / MDD** | Δ (A-new − A-old) | B OOS / n / MDD | A-new vs B |
+|---|---|---|---|---:|---|---|
+| DXY    | −0.46 /  3 | −0.78 / 29 | **−0.90 / 29 / −17.8%** | **−0.12** (hurt) | −0.89 / 31 / −18.7% | tie |
+| EURUSD |   n/a /  0 | −1.42 / 29 | **−1.48 / 29 / −22.0%** | **−0.06** (hurt slightly) | −1.20 / 32 / −24.2% | B better |
+| GBPUSD | −1.21 /  2 | −0.70 / 18 | **−0.38 / 18 / −6.4%** | **+0.32** (helped) | −0.56 / 18 / −9.4% | **A-new better** |
+| USDJPY | −0.76 /  2 | −0.40 / 28 | **−0.63 / 28 / −11.3%** | **−0.23** (hurt) | −0.39 / 30 / −10.0% | B better |
+| USDCAD | +0.43 /  4 | −0.17 / 19 | **+0.11 / 19 / −5.6%** | **+0.28** (helped, sign flip) | −0.12 / 21 / −7.0% | **A-new better** |
+| AUDUSD | −0.19 /  6 | +0.32 / 32 | **+0.61 / 32 / −8.3%** | **+0.29** (helped) | +0.70 / 32 / −9.0% | B better |
+| NZDUSD | −1.65 /  6 | −0.12 / 28 | **−0.59 / 28 / −10.7%** | **−0.47** (hurt) | +0.10 / 29 / −10.7% | B better |
+
+**Did the cut help or hurt Variant A?** **Mixed, net trivial.** Mean
+Δ across the 7 pairs = **+0.01**; median Δ = **−0.06**. Three pairs
+were helped (GBPUSD, USDCAD, AUDUSD — and USDCAD flipped from −0.17
+to +0.11), four pairs were hurt (DXY, EURUSD, USDJPY, NZDUSD; NZDUSD
+the worst at −0.47). The early trail activation IS doing something
+visible: **A-new's OOS MaxDD is better than B's on 5 of 7 pairs**
+(DXY −17.8 vs B −18.7, EURUSD −22.0 vs −24.2, GBPUSD −6.4 vs −9.4,
+USDCAD −5.6 vs −7.0, NZDUSD −10.7 = tie). So the trail is protecting
+drawdown the way Dr. A intended — but on Sortino the right-tail cost
+(when a runner that would have gone to A-old's 3.456× gets trail-
+stopped earlier) partly washes out the drawdown win.
+
+**Variant ranking after the tightening: B still edges A-new** on
+Sortino — wins 4 of 7 pairs (EURUSD, USDJPY, AUDUSD, NZDUSD), loses 2
+(GBPUSD, USDCAD), ties 1 (DXY). On MaxDD the ranking flips: A-new
+wins 5 of 7. Neither clears GO on any pair.
 
 H24 robustness gate not invoked anywhere — no pair cleared the GO
 prerequisite.
 
 Variant ranking on OOS Sortino across pairs (a tie-breaker for any
-future H31 use of either target ladder): **Variant B slightly edges
-Variant A on 6 of 7 pairs**. The interpretation is structural —
-Variant B anchors targets on P1 (higher than P2) so targets sit
-further from entry; when trades work they capture more right tail. It
-is not, however, enough right tail to flip any pair to a tradeable
+future H31 use of either target ladder): in the **original H30 cut**
+Variant B slightly edged Variant A on 6 of 7 pairs; after the
+**2026-06-20 A-tightening** B still wins 4 of 7 on Sortino and A-new
+wins 5 of 7 on MaxDD. The interpretation is structural — Variant B
+anchors targets on P1 (higher than P2) so targets sit further from
+entry; A-new's earlier trail activation protects drawdown by ratcheting
+the stop near T2_A. Neither is enough to flip any pair to a tradeable
 edge.
 
 ## Comparison to H29: did the correction change the trade set?

@@ -39,12 +39,20 @@ Time-asymmetry bias (Hurst's third law):
   P1.idx < T-mid  → rally was fast, correction slow → BEARISH (countertrend)
   P1.idx == T-mid → neutral
 
-Target rules — two variants tested side-by-side in H30:
-  VARIANT A (primary per Dr. A's H30 spec): 1.618 / 2.345 / 3.456 × height,
-    projected from P2 in the breakout direction.
+Target rules — two variants tested side-by-side:
+  VARIANT A (Dr. A's H30 primary, tightened 2026-06-20): TWO targets,
+    1.618 / 2.236 × height, projected from P2 in the breakout direction.
       LONG  target_k = P2_price + level_k · height
       SHORT target_k = P2_price − level_k · height
-  VARIANT B (alternative): 1.618 / 2.236 / 3.618 × height, projected from P1.
+    Trail activates *near the final target* — for A that means near T2_A
+    = P2 ± 2.236·height. The factor (TRAIL_ACTIVATION_FRAC_A = 2.200)
+    mirrors B's "3.600 near 3.618" convention but is anchored on P2
+    (not entry), because A's targets are P2-anchored. This is passed
+    explicitly to ``simulate_fib_trade`` as ``trail_activation_price``
+    so the simulator's default entry-anchored arithmetic doesn't apply.
+  VARIANT B (alternative, unchanged): THREE targets, 1.618 / 2.236 /
+    3.618 × height, projected from P1; trail factor 3.600 vs entry, same
+    convention as M-P1.
       LONG  target_k = P1_price + level_k · height
       SHORT target_k = P1_price − level_k · height
 
@@ -84,7 +92,9 @@ PROMINENCE_FRAC: float = 0.005      # 0.5% of price
 DISTANCE_BARS: int = 3              # same as M-detector
 MAX_LENGTH_BARS: int = 250          # H30: cap to prevent mega-box artifact
 FIB_LEVELS_B: tuple[float, float, float] = (1.618, 2.236, 3.618)  # variant B
-FIB_LEVELS_A: tuple[float, float, float] = (1.618, 2.345, 3.456)  # variant A (H30 primary)
+FIB_LEVELS_A: tuple[float, float] = (1.618, 2.236)                # variant A (H30 tightened 2026-06-20: 2 targets, T3 dropped)
+TRAIL_ACTIVATION_FRAC_A: float = 2.200   # near A's T2 = P2 ± 2.236·height (P2-anchored)
+TRAIL_ACTIVATION_FRAC_B: float = 3.600   # near B's T3 = entry ± 3.618·range (entry-anchored, M-P1 convention)
 FIB_LEVELS = FIB_LEVELS_B   # kept for backwards compatibility with H29 callers
 
 TEndpoint = Literal["p2", "p3"]
@@ -280,20 +290,41 @@ def detect_boxes_df(
 
 def _targets_for(box: BoxPattern, target_variant: TargetVariant,
                   entry_price: float) -> list[float]:
-    """Compute T1/T2/T3 prices per the H30 variants.
+    """Compute target prices per the H30 variants.
 
-    * VARIANT A (H30 primary): 1.618 / 2.345 / 3.456 × ``box.height``,
-      projected from ``box.p2_price`` in the breakout direction.
-    * VARIANT B (alternative): 1.618 / 2.236 / 3.618 × ``box.height``,
-      projected from ``box.p1_price`` in the breakout direction.
+    * VARIANT A (Dr. A's primary, tightened 2026-06-20): TWO targets, 1.618
+      and 2.236 × ``box.height``, projected from ``box.p2_price`` in the
+      breakout direction. T3 dropped.
+    * VARIANT B (alternative): THREE targets, 1.618 / 2.236 / 3.618 ×
+      ``box.height``, projected from ``box.p1_price`` in the breakout
+      direction.
 
-    ``entry_price`` is accepted for legacy fallback semantics but is NOT used
-    by either H30 variant — both anchor on box geometry, not the entry.
+    ``entry_price`` is accepted for legacy/general-purpose fallback semantics
+    but is NOT used by either H30 variant — both anchor on box geometry.
     """
     levels = FIB_LEVELS_A if target_variant == "A" else FIB_LEVELS_B
     anchor = box.p2_price if target_variant == "A" else box.p1_price
     sign = +1.0 if box.direction == "long" else -1.0
     return [anchor + sign * lvl * box.height for lvl in levels]
+
+
+def _trail_activation_price_for(box: BoxPattern, target_variant: TargetVariant,
+                                 entry_price: float, range_size: float) -> float:
+    """Trail activates near the final target for each variant.
+
+    Variant A targets are anchored on P2; "near the final target" therefore
+    means ``P2 ± TRAIL_ACTIVATION_FRAC_A · height`` (mirror of B's
+    "3.600 near 3.618"). We pass this explicitly because the simulator's
+    default trail-price computation is entry-anchored.
+
+    Variant B keeps the M-P1 convention: trail near 3.600 × range from
+    entry. ``range_size`` here is the simulator's trail range (= box height
+    in the current box_to_trade impl).
+    """
+    sign = +1.0 if box.direction == "long" else -1.0
+    if target_variant == "A":
+        return box.p2_price + sign * TRAIL_ACTIVATION_FRAC_A * box.height
+    return entry_price + sign * TRAIL_ACTIVATION_FRAC_B * range_size
 
 
 def box_to_trade(
@@ -354,6 +385,9 @@ def box_to_trade(
             range_low_idx=box.p1_idx, initial_stop=initial_stop,
             targets=targets,
         )
+    trail_price = _trail_activation_price_for(box, target_variant,
+                                               entry_price, range_size)
     return ps.simulate_fib_trade(df, trade, max_bars=max_bars,
+                                  trail_activation_price=trail_price,
                                   close_col=close_col, high_col=high_col,
                                   low_col=low_col)

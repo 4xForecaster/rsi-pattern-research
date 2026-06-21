@@ -151,8 +151,9 @@ def test_dedup_after_p3():
         assert p0 > prev_p3, "dedup rule violated"
 
 
-def test_box_to_trade_variant_A_targets_from_p2_with_corrected_levels():
-    """H30 primary: 1.618 / 2.345 / 3.456 × box.height projected from P2."""
+def test_box_to_trade_variant_A_targets_from_p2_two_targets():
+    """H30 tightened spec (2026-06-20): TWO targets, 1.618 / 2.236 × height,
+    projected from P2. T3 dropped."""
     df = _synth_long_box_bullish_asym()
     b = bp.detect_boxes_df(df, "long")[0]
     trade = bp.box_to_trade(b, df, bias_filter=True, target_variant="A")
@@ -161,11 +162,65 @@ def test_box_to_trade_variant_A_targets_from_p2_with_corrected_levels():
     assert abs(trade.initial_stop - df["low"].iloc[b.p2_idx]) < 1e-9
     expected_trail_range = b.p1_price - trade.initial_stop
     assert abs(trade.range_size - expected_trail_range) < 1e-9
-    # variant A targets: anchor = P2 price, levels = (1.618, 2.345, 3.456) × height
-    expected = [b.p2_price + lvl * b.height for lvl in (1.618, 2.345, 3.456)]
+    # exactly two targets
+    assert len(trade.targets) == 2
+    expected = [b.p2_price + lvl * b.height for lvl in (1.618, 2.236)]
     for t, e in zip(trade.targets, expected):
         assert abs(t - e) < 1e-6
-    assert trade.targets[0] < trade.targets[1] < trade.targets[2]
+    assert trade.targets[0] < trade.targets[1]
+
+
+def test_box_to_trade_variant_A_terminates_at_T2_not_T3():
+    """Generalized terminal-exit: variant A's final target is T2; hitting T2
+    must record exit_reason == 'T2' (not 'T3', not 'time')."""
+    # Construct a series where the variant-A long box's T2 is definitely hit
+    # within the simulation window.
+    n = 80
+    rng = np.random.RandomState(2)
+    closes = 100 + rng.normal(0, 0.05, n)
+    highs = closes + 0.3; lows = closes - 0.3
+    # Carve a box that's bullish-aligned and then rallies far past T2_A
+    lows[2] = 95.0; highs[2] = 95.5; closes[2] = 95.3
+    for i, val in enumerate(np.linspace(95.3, 110.0, 24)):
+        highs[2 + i] = val + 0.3; lows[2 + i] = val - 0.3; closes[2 + i] = val
+    highs[25] = 110.5; lows[25] = 109.5; closes[25] = 110.0
+    for i, val in enumerate(np.linspace(110.0, 102.65, 6)):
+        highs[25 + i] = val + 0.3; lows[25 + i] = val - 0.3; closes[25 + i] = val
+    lows[30] = 102.0; highs[30] = 102.6; closes[30] = 102.5
+    for i, val in enumerate(np.linspace(102.5, 110.4, 8)):
+        highs[30 + i] = val + 0.3; lows[30 + i] = val - 0.3; closes[30 + i] = val
+    highs[38] = 110.8; lows[38] = 110.0; closes[38] = 110.5
+    # Strong rally past T2_A = P2 + 2.236*h. P2_price ≈ 102, h ≈ 15.5 → T2_A ≈ 136.7.
+    # Drive closes upward fast so the bar reaches >=140.
+    for i, val in enumerate(np.linspace(111.0, 145.0, n - 39)):
+        highs[39 + i] = val + 0.5; lows[39 + i] = val - 0.5; closes[39 + i] = val
+    df = _df(highs.tolist(), lows.tolist(), closes.tolist())
+    b = bp.detect_boxes_df(df, "long")[0]
+    trade = bp.box_to_trade(b, df, bias_filter=True, target_variant="A")
+    assert trade is not None
+    assert trade.exit_reason == "T2", (
+        f"expected terminal exit at T2 (last target), got {trade.exit_reason}")
+
+
+def test_box_to_trade_variant_A_trail_anchored_on_p2():
+    """Variant A's trail-activation price must be P2 ± 2.200·height
+    (NOT entry ± factor·range_size). Build a series where stop never fires,
+    trail never arms within window, and read FibTrade.range_size + the
+    side-effect of trail behaviour. Simplest: just unit-check the helper."""
+    df = _synth_long_box_bullish_asym()
+    b = bp.detect_boxes_df(df, "long")[0]
+    # entry & range come from box_to_trade math
+    entry_idx = b.p3_idx + 1
+    entry_price = float(df["close"].iloc[entry_idx])
+    initial_stop = float(df["low"].iloc[b.p2_idx])
+    range_size = b.p1_price - initial_stop
+    trail_A = bp._trail_activation_price_for(b, "A", entry_price, range_size)
+    expected = b.p2_price + 2.200 * b.height
+    assert abs(trail_A - expected) < 1e-9
+    # variant B keeps the entry-anchored convention
+    trail_B = bp._trail_activation_price_for(b, "B", entry_price, range_size)
+    expected_B = entry_price + 3.600 * range_size
+    assert abs(trail_B - expected_B) < 1e-9
 
 
 def test_box_to_trade_variant_B_targets_from_p1_with_h29_levels():

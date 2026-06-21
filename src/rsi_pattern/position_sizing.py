@@ -173,20 +173,34 @@ TRAIL_ACTIVATION_FACTOR = 3.600   # "as price nears 3.618x" — activate trail n
 def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                         max_bars: int = 200,
                         trail_activation_factor: float = TRAIL_ACTIVATION_FACTOR,
+                        trail_activation_price: Optional[float] = None,
                         close_col: str = "close", high_col: str = "high",
                         low_col: str = "low") -> FibTrade:
     """Walk forward bar-by-bar to find the exit.
 
     Per Dr. A (2026-05-12 clarification): the 3-bar trailing stop activates
-    only as price NEARS T3 (at approximately the 3.600x range). T1 and T2 are
-    target markers but do NOT trigger a stop adjustment.
+    only as price NEARS the FINAL target (at ~3.600x range from entry in the
+    M-P1 / Variant B convention). T1, T2 (and intermediate Ts) are markers
+    but do NOT trigger a stop adjustment.
+
+    Terminal-exit generalization (2026-06-20, H30 spec tweak): the trade exits
+    when ``targets[-1]`` is hit. For canonical 3-target M-P1 / Variant-B
+    trades, that's still T3 (unchanged behaviour). For 2-target Variant-A
+    box trades it correctly terminates at T2. ``exit_reason`` carries the
+    actual final-target name (e.g. "T3" or "T2").
+
+    Trail activation: if ``trail_activation_price`` is given it is used
+    directly (this is how box-pattern Variant A passes a price anchored on
+    P2 + 2.200·height, mirroring "trail near the final target" when targets
+    are NOT entry-anchored). Otherwise it falls back to
+    ``entry ± trail_activation_factor · range_size`` (the M-P1 default).
 
     Logic:
     - Initial stop holds throughout until either:
       - Price hits initial_stop → exit at stop (loss)
-      - Price reaches trail_activation_factor (default 3.600x) range distance
-        from entry → activate the 3-bar trailing stop for the final approach
-      - Price reaches T3 cleanly → exit at T3
+      - Price reaches trail-activation price → activate the 3-bar trailing
+        stop for the final approach
+      - Price reaches the final target cleanly → exit at that target
     - Once trailing stop is active, update each bar; exit when triggered.
     - Hard cap: max_bars (time exit at close).
     """
@@ -197,10 +211,13 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
     trail_active = False
 
     # Precompute the trail activation threshold price
-    if trade.direction == "long":
-        trail_activation_price = trade.entry_price + trail_activation_factor * trade.range_size
-    else:
-        trail_activation_price = trade.entry_price - trail_activation_factor * trade.range_size
+    if trail_activation_price is None:
+        if trade.direction == "long":
+            trail_activation_price = trade.entry_price + trail_activation_factor * trade.range_size
+        else:
+            trail_activation_price = trade.entry_price - trail_activation_factor * trade.range_size
+    final_t_idx = len(trade.targets) - 1
+    final_t_name = f"T{final_t_idx + 1}"
 
     for i in range(trade.entry_idx + 1, end):
         bar_high = float(df[high_col].iloc[i])
@@ -215,17 +232,17 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                 if trail_active and targets_hit:
                     trade.exit_reason += f" (targets {','.join(targets_hit)})"
                 return trade
-            # 2. Target markers
+            # 2. Target markers (last target terminates the trade)
             for t_idx, t_price in enumerate(trade.targets):
                 tname = f"T{t_idx + 1}"
                 if bar_high >= t_price and tname not in targets_hit:
                     targets_hit.append(tname)
-                    if tname == "T3":
+                    if t_idx == final_t_idx:
                         trade.exit_idx = i
                         trade.exit_price = t_price
-                        trade.exit_reason = "T3"
+                        trade.exit_reason = tname
                         return trade
-            # 3. Trail activation — once price approaches 3.600x range
+            # 3. Trail activation — once price reaches the trail-activation price
             if not trail_active and bar_high >= trail_activation_price:
                 trail_active = True
             # 4. Update trailing stop if active
@@ -246,10 +263,10 @@ def simulate_fib_trade(df: pd.DataFrame, trade: FibTrade,
                 tname = f"T{t_idx + 1}"
                 if bar_low <= t_price and tname not in targets_hit:
                     targets_hit.append(tname)
-                    if tname == "T3":
+                    if t_idx == final_t_idx:
                         trade.exit_idx = i
                         trade.exit_price = t_price
-                        trade.exit_reason = "T3"
+                        trade.exit_reason = tname
                         return trade
             if not trail_active and bar_low <= trail_activation_price:
                 trail_active = True
