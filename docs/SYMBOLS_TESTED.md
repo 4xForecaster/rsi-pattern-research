@@ -123,6 +123,62 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## Box detector P1-mis-track fix + nested-box flag (H30f, 2026-06-20) — SWEEPs migrate GBPUSD → EURUSD, still 0 GO
+
+Dr. A's sixth visual catch on the regenerated H30e figures: **(Issue 1)**
+the 1993 DXY LONG REV box had P1 at ~91.97 while higher peaks in July/
+August 1993 (real max **95.64** at idx 916) sat right there on the
+chart — same class of bug as H30b's "P1 must be the dominant swing
+high" but surviving five revisions. **(Issue 2)** the detector should
+also find smaller sub-boxes that satisfy the full 4-point construction
+inside a larger parent's [P0..P3] window, gated behind `nested=True`.
+
+Root cause for Issue 1: `_walk_chain_continuation`'s rev-track state
+(running max for the eventual reversal box's P1) was rebuilt fresh on
+every walker call AND bars in `(P2_cont, P3_cont]` were never processed
+for the rev track — so when a cont box emitted at `j = P2_cont` and the
+function returned, bars 890..932 in the 1993 case (including the
+95.64-high bar) vanished from rev tracking. Fix: thread `rev_state`
+across cont calls, extend the cont-gap pre-scan to also update the
+chain-direction running extreme `cont_re`, and add a post-cont-emit
+loop that scans `(j, P3_cont]` for the rev track before returning.
+
+Issue 2 fix: new `_add_nested_to_chained` helper. When `nested=True`,
+re-runs standalone (non-chained) detection over the same series in
+BOTH directions, then assigns each candidate sub-box the smallest
+chain parent whose `[P0..P3]` strictly contains it. New `BoxPattern`
+fields: `box_id` (monotonic per chain detection) and `parent_box_id`
+(None for primaries, set for nested).
+
+Verification — DXY daily: pre-fix had 14/135 LONG + 4/130 SHORT chain
+boxes violating `p1_price == extremum(high or low) over [p0_idx..p2_idx]`;
+post-fix: **0/266 violators**. Chain 11/0 REV now has P1 at idx 916
+= 95.64 (matches Dr. A's expected dominant peak exactly).
+
+Backtest — Variant A chain-conditional under H30f detector:
+
+| Sym | H30b H30f | N≥1 OOS | N≥2 OOS | N≥3 OOS |
+|---|---|---:|---:|---:|
+| DXY    | −0.50 / 37 | +0.01 / 30 | −0.23 / 16 | −0.12 / 9 |
+| **EURUSD** | −0.19 / 23 | **+2.05 / 18 SWEEP** | **+1.19 / 10 SWEEP** | −0.11 / 3 |
+| GBPUSD | +1.29 / 25 SWEEP | −0.08 / 20 | +0.39 / 10 | +0.34 / 5 |
+| USDJPY | −0.13 / 27 | +0.14 / 13 | −0.22 / 3 | +nan / 0 |
+| USDCAD | −0.51 / 27 | +0.21 / 20 | +0.15 / 9 | −0.58 / 6 |
+| AUDUSD | −0.33 / 19 | +0.23 / 25 | +0.55 / 15 | +1.37 / 6 |
+| NZDUSD | −0.88 / 21 | −0.80 / 18 | −0.41 / 11 | −0.55 / 5 |
+
+**0 GO, 2 SWEEPs** — EURUSD chain N≥1 (+2.05 / 18) and N≥2 (+1.19 /
+10). GBPUSD's prior chain N≥2 SWEEP (+1.90 / 12 at H30e) collapses to
+NO-GO. Standalone GBPUSD A SWEEP at +1.29 unchanged (H30f doesn't
+touch the standalone path). The 2-SWEEP count is stable across
+H30e → H30f but the *identity* of the SWEEP cells migrates from
+GBPUSD to EURUSD chain-conditional — diagnostic of how sensitive
+the SWEEP-tier signal is to chain-mode state-machine fidelity.
+Detector substrate is structurally clean across both state machines
+now; H31 regime-classifier remains the recommended direction.
+27/27 tests pass (5 new H30f regressions). Detail:
+results/H30_box_pattern_corrected.md § "H30f".
+
 ## Box detector third bug fix (H30e, 2026-06-20) — P0 = lowest low, 0 GO 2 SWEEP (both GBPUSD)
 
 Dr. A's third visual catch: "Black arrow shows price's lowest-low which

@@ -122,6 +122,11 @@ class BoxPattern:
     chain_id: Optional[int] = None          # monotonic chain identifier
     chain_index: Optional[int] = None       # 0 = first box of chain, 1 = first continuation, ...
     reverses_chain_id: Optional[int] = None # if this box reversed a prior chain, that chain's id
+    # H30f (2026-06-20) — nested detection. ``box_id`` is a per-detection
+    # monotonic id assigned by the chained detector. ``parent_box_id``
+    # points to the containing box when this is a nested sub-box.
+    box_id: Optional[int] = None
+    parent_box_id: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +165,7 @@ def detect_box_numpy(
     max_length: Optional[int] = MAX_LENGTH_BARS,
     legacy: bool = False,
     chain_mode: bool = False,
+    nested: bool = False,
 ) -> list[BoxPattern]:
     """One-pass box detector. ``direction='long'`` → P0=trough, P1=peak;
     ``direction='short'`` → P0=peak, P1=trough.
@@ -205,11 +211,20 @@ def detect_box_numpy(
     Pass ``None`` to disable.
     """
     if chain_mode:
-        return _detect_box_chained(highs, lows, closes,
-                                    prominence_frac=prominence_frac,
-                                    distance=distance,
-                                    t_endpoint=t_endpoint,
-                                    max_length=max_length)
+        parents = _detect_box_chained(highs, lows, closes,
+                                       prominence_frac=prominence_frac,
+                                       distance=distance,
+                                       t_endpoint=t_endpoint,
+                                       max_length=max_length)
+        # H30f Issue 2 — assign box_id; add nested sub-boxes when requested.
+        parents = [_replace(b, box_id=i) for i, b in enumerate(parents)]
+        if nested:
+            parents = _add_nested_to_chained(
+                parents, highs, lows, closes,
+                prominence_frac=prominence_frac, distance=distance,
+                t_endpoint=t_endpoint, max_length=max_length,
+            )
+        return parents
     if legacy:
         return _detect_box_legacy(highs, lows, closes, direction,
                                    prominence_frac=prominence_frac,
@@ -557,36 +572,64 @@ def _walk_chain_continuation(
     cap: int,
     t_endpoint: TEndpoint,
     n: int,
-) -> tuple[Optional[BoxPattern], Optional[str], int, float]:
+    rev_state: Optional[dict] = None,
+) -> tuple[Optional[BoxPattern], Optional[str], int, float, dict]:
     """Race the continuation candidate (P0 = current_box.P2, same direction)
     against the reversal candidate (P0 = chain's running terminal extreme,
-    opposite direction). Returns (next_box, type, new_terminal_idx,
-    new_terminal_price). type ∈ {"cont", "rev"} or None if both abandoned.
+    opposite direction).
+
+    H30f (2026-06-20) — ``rev_state`` is threaded through successive cont
+    calls in the same chain. Without persistence, each cont call re-init
+    the rev's running_max at the chain terminal bar; a higher high the
+    rev had captured during the prior cont call was lost when the next
+    cont call started. That mis-tracked P1 on reversal boxes — Dr. A's
+    1993 DXY example (delta 3.67 dollars between actual and emitted P1).
+
+    Returns (next_box, type, new_terminal_idx, new_terminal_price,
+    rev_state). type ∈ {"cont", "rev"} or None if both abandoned.
     """
     cont_dir = chain_direction
     rev_dir = "short" if cont_dir == "long" else "long"
 
     cont_p0 = current_box.p2_idx
     cont_p0_price = current_box.p2_price
-    # H30e: pre-scan the gap [cont_p0+1, start_bar) for a deeper low /
-    # higher high than the canonical "P0 = previous P2" value. Bars in
-    # this gap are part of the previous box's breakout phase and would
-    # otherwise be missed by the forward walker, leaving cont_p0 at a
-    # shallower swing than the actual lowest low in the leading-up-to-P1
-    # region.
+    cont_re_idx = cont_p0
+    cont_re_price = _running_at(cont_dir, highs, lows, cont_p0)
+    cont_re_updated = False    # H30d gate (see _detect_box_corrected)
+    # H30e + H30f: pre-scan the gap [cont_p0+1, start_bar) for a deeper
+    # extreme than P0 (Dr. A's "P0 = lowest low") AND for a higher
+    # running-extreme than the cont's running_max init (H30f, Dr. A's
+    # 1993 case: cont's P1 must include bars in the gap, not just bars
+    # past start_bar). Bars in this gap are part of the previous box's
+    # breakout phase and would otherwise be invisible to the forward
+    # walker.
     for k in range(cont_p0 + 1, start_bar):
         if _invalidates(cont_dir, highs, lows, k, cont_p0_price):
             cont_p0 = k
             cont_p0_price = _p0_price_at(cont_dir, highs, lows, k)
-    cont_re_idx = cont_p0
-    cont_re_price = _running_at(cont_dir, highs, lows, cont_p0)
-    cont_re_updated = False    # H30d gate (see _detect_box_corrected)
+            cont_re_idx = k
+            cont_re_price = _running_at(cont_dir, highs, lows, k)
+            cont_re_updated = False
+        else:
+            cur = _running_at(cont_dir, highs, lows, k)
+            if _is_better(cont_dir, cur, cont_re_price):
+                cont_re_price = cur
+                cont_re_idx = k
+                cont_re_updated = True
 
-    rev_p0_idx = chain_terminal_idx
-    rev_p0_price = chain_terminal_price
-    rev_re_idx = rev_p0_idx
-    rev_re_price = _running_at(rev_dir, highs, lows, rev_p0_idx)
-    rev_re_updated = False     # H30d gate
+    # H30f: thread rev state across cont calls in the same chain.
+    if rev_state is None:
+        rev_p0_idx = chain_terminal_idx
+        rev_p0_price = chain_terminal_price
+        rev_re_idx = rev_p0_idx
+        rev_re_price = _running_at(rev_dir, highs, lows, rev_p0_idx)
+        rev_re_updated = False     # H30d gate
+    else:
+        rev_p0_idx = rev_state["p0_idx"]
+        rev_p0_price = rev_state["p0_price"]
+        rev_re_idx = rev_state["re_idx"]
+        rev_re_price = rev_state["re_price"]
+        rev_re_updated = rev_state["re_updated"]
 
     term_idx = chain_terminal_idx
     term_price = chain_terminal_price
@@ -596,7 +639,11 @@ def _walk_chain_continuation(
         cont_alive = (j - cont_p0) <= cap
         rev_alive = (j - rev_p0_idx) <= cap
         if not cont_alive and not rev_alive:
-            return None, None, term_idx, term_price
+            return None, None, term_idx, term_price, {
+                "p0_idx": rev_p0_idx, "p0_price": rev_p0_price,
+                "re_idx": rev_re_idx, "re_price": rev_re_price,
+                "re_updated": rev_re_updated,
+            }
 
         # Update chain terminal extreme (in chain direction)
         cur_chain = _running_at(cont_dir, highs, lows, j)
@@ -640,7 +687,36 @@ def _walk_chain_continuation(
                                              p3, _p3_price_at(cont_dir, highs, lows, p3),
                                              t_endpoint=t_endpoint, cap=cap)
                             if box is not None:
-                                return box, "cont", term_idx, term_price
+                                # H30f: cont won at j=P2. Bars in (P2, P3]
+                                # are part of cont's breakout; without
+                                # processing them for the rev track, rev's
+                                # running_max freezes mid-chain (Dr. A's
+                                # 1993 case — bars 890..932 missed because
+                                # cont emitted at 889 and returned).
+                                for k in range(j + 1, box.p3_idx + 1):
+                                    # Chain terminal can still update across
+                                    # the breakout window (it's used by next
+                                    # call's rev_p0 init too).
+                                    cur_term = _running_at(cont_dir, highs, lows, k)
+                                    if _is_better(cont_dir, cur_term, term_price):
+                                        term_price = cur_term
+                                        term_idx = k
+                                        rev_p0_idx = k
+                                        rev_p0_price = cur_term
+                                        rev_re_idx = k
+                                        rev_re_price = _running_at(rev_dir, highs, lows, k)
+                                        rev_re_updated = False
+                                    elif k > rev_p0_idx:
+                                        cur_rev_k = _running_at(rev_dir, highs, lows, k)
+                                        if _is_better(rev_dir, cur_rev_k, rev_re_price):
+                                            rev_re_price = cur_rev_k
+                                            rev_re_idx = k
+                                            rev_re_updated = True
+                                return box, "cont", term_idx, term_price, {
+                                    "p0_idx": rev_p0_idx, "p0_price": rev_p0_price,
+                                    "re_idx": rev_re_idx, "re_price": rev_re_price,
+                                    "re_updated": rev_re_updated,
+                                }
 
         # ---- Reversal track update ----
         if rev_alive and j > rev_p0_idx:
@@ -665,9 +741,20 @@ def _walk_chain_continuation(
                                          p3, _p3_price_at(rev_dir, highs, lows, p3),
                                          t_endpoint=t_endpoint, cap=cap)
                         if box is not None:
-                            return box, "rev", term_idx, term_price
+                            # Reversal box ends this chain → rev_state
+                            # carries the rev candidate that just won. New
+                            # chain starts fresh (caller resets rev_state).
+                            return box, "rev", term_idx, term_price, {
+                                "p0_idx": rev_p0_idx, "p0_price": rev_p0_price,
+                                "re_idx": rev_re_idx, "re_price": rev_re_price,
+                                "re_updated": rev_re_updated,
+                            }
         j += 1
-    return None, None, term_idx, term_price
+    return None, None, term_idx, term_price, {
+        "p0_idx": rev_p0_idx, "p0_price": rev_p0_price,
+        "re_idx": rev_re_idx, "re_price": rev_re_price,
+        "re_updated": rev_re_updated,
+    }
 
 
 def _detect_box_chained(
@@ -733,11 +820,14 @@ def _detect_box_chained(
                 term_idx = k
 
         bar = first.p3_idx + 1
-        # Continuation/reversal loop
+        # Continuation/reversal loop. H30f: rev_state persists across cont
+        # calls so the rev candidate's running extreme isn't reset when a
+        # cont box completes mid-chain (Dr. A's 1993 bug).
+        rev_state: Optional[dict] = None
         while bar < n:
-            nbox, ntype, new_term_idx, new_term_price = _walk_chain_continuation(
+            nbox, ntype, new_term_idx, new_term_price, rev_state = _walk_chain_continuation(
                 highs, lows, current, chain_dir, term_idx, term_price,
-                bar, cap, t_endpoint, n
+                bar, cap, t_endpoint, n, rev_state=rev_state,
             )
             if nbox is None:
                 # Chain ends silently
@@ -758,7 +848,10 @@ def _detect_box_chained(
                         term_idx = k
                 bar = nbox.p3_idx + 1
             else:
-                # Reversal: end this chain, start a new one
+                # Reversal: end this chain, start a new one. rev_state
+                # belongs to the OLD chain — discard, fresh chain initializes
+                # a fresh rev candidate on next iteration.
+                rev_state = None
                 old_chain_id = chain_id
                 chain_id = next_chain_id; next_chain_id += 1
                 nbox = _replace(nbox, chain_id=chain_id, chain_index=0,
@@ -778,6 +871,67 @@ def _detect_box_chained(
         # Advance seed_pos past current bar for the NEXT outer chain start
         while seed_pos < len(seeds) and seeds[seed_pos][0] < bar:
             seed_pos += 1
+    return out
+
+
+# ---------------------------------------------------------------------------
+# H30f Issue 2 — nested sub-boxes (opt-in via ``nested=True``)
+# ---------------------------------------------------------------------------
+
+def _add_nested_to_chained(
+    parents: list[BoxPattern],
+    highs: np.ndarray, lows: np.ndarray, closes: np.ndarray,
+    *,
+    prominence_frac: float, distance: int,
+    t_endpoint: TEndpoint, max_length: Optional[int],
+) -> list[BoxPattern]:
+    """Append nested (sub-)boxes to a chain detection.
+
+    Definition (H30f, 2026-06-20): a *nested* box is any box that satisfies
+    the full standalone 4-point construction AND sits strictly inside some
+    chained parent's [P0_idx, P3_idx] span. Each nested box is tagged with
+    ``parent_box_id`` = the smallest containing parent's ``box_id`` (so
+    nesting can be drawn one level deep without ambiguity). Both directions
+    are considered — a SHORT sub-box inside a LONG parent is valid, and
+    vice versa, because the parent's interior is just price action.
+
+    Strict containment excludes the parent itself (identical (p0_idx,
+    p3_idx) is dropped). Nested boxes themselves do NOT chain — they're
+    standalone 4-point constructions of independent interest.
+
+    Cost: two full standalone detections (one per direction) over the same
+    series, plus O(parents · candidates) containment matching. For DXY
+    daily (~12k bars, ~250 chained boxes) this is sub-second.
+    """
+    if not parents:
+        return parents
+    out: list[BoxPattern] = list(parents)
+    next_id = max((p.box_id or 0) for p in parents) + 1
+    candidates: list[BoxPattern] = []
+    for d in ("long", "short"):
+        candidates.extend(_detect_box_corrected(
+            highs, lows, closes, d,  # type: ignore[arg-type]
+            prominence_frac=prominence_frac, distance=distance,
+            t_endpoint=t_endpoint, max_length=max_length,
+        ))
+    for cand in candidates:
+        best_parent: Optional[BoxPattern] = None
+        best_span: Optional[int] = None
+        for p in parents:
+            if cand.p0_idx < p.p0_idx or cand.p3_idx > p.p3_idx:
+                continue
+            if cand.p0_idx == p.p0_idx and cand.p3_idx == p.p3_idx:
+                continue  # identical span — that's the parent itself
+            span = p.p3_idx - p.p0_idx
+            if best_span is None or span < best_span:
+                best_parent = p
+                best_span = span
+        if best_parent is None:
+            continue
+        out.append(_replace(cand, box_id=next_id,
+                             parent_box_id=best_parent.box_id))
+        next_id += 1
+    out.sort(key=lambda b: (b.p3_idx, b.p0_idx))
     return out
 
 
@@ -888,6 +1042,7 @@ def detect_boxes_df(
     max_length: Optional[int] = MAX_LENGTH_BARS,
     legacy: bool = False,
     chain_mode: bool = False,
+    nested: bool = False,
     high_col: str = "high",
     low_col: str = "low",
     close_col: str = "close",
@@ -897,7 +1052,7 @@ def detect_boxes_df(
         df[close_col].to_numpy(), direction=direction,
         prominence_frac=prominence_frac, distance=distance,
         t_endpoint=t_endpoint, max_length=max_length, legacy=legacy,
-        chain_mode=chain_mode,
+        chain_mode=chain_mode, nested=nested,
     )
 
 

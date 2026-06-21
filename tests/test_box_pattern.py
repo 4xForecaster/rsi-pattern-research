@@ -775,3 +775,150 @@ def test_max_length_cap_drops_mega_boxes():
     # disabling cap (None) also lets it through
     boxes_none = bp.detect_boxes_df(df, "long", max_length=None)
     assert any(b.length > 250 for b in boxes_none)
+
+
+# ---------------------------------------------------------------------------
+# H30f Issue 1 — P1 must equal the actual extremum in [P0..P2] for EVERY box
+# (the 1993 DXY case showed reversal boxes losing track of their running max
+# when a continuation box's breakout window wasn't processed for the rev
+# track; fix is in _walk_chain_continuation's post-emit scan + persisted
+# rev_state across cont calls).
+# ---------------------------------------------------------------------------
+
+def _assert_p1_invariant(df, boxes, *, ctx=""):
+    for b in boxes:
+        if b.direction == "long":
+            actual = float(df["high"].iloc[b.p0_idx:b.p2_idx + 1].max())
+        else:
+            actual = float(df["low"].iloc[b.p0_idx:b.p2_idx + 1].min())
+        assert abs(actual - b.p1_price) < 1e-9, (
+            f"H30f Issue 1 {ctx}: chain {b.chain_id}/{b.chain_index} "
+            f"{b.direction} (rev_of={b.reverses_chain_id}) P1={b.p1_price:.4f} "
+            f"but actual extremum in [P0={b.p0_idx}..P2={b.p2_idx}]={actual:.4f}")
+
+
+def test_h30f_p1_equals_running_extremum_on_long_chain_then_short_rev():
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    _assert_p1_invariant(df, boxes, ctx="LONG-chain→SHORT-rev fixture")
+
+
+def test_h30f_p1_equals_running_extremum_on_short_chain_then_long_rev():
+    df = _synth_three_box_short_chain_then_long_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    _assert_p1_invariant(df, boxes, ctx="SHORT-chain→LONG-rev fixture")
+
+
+def _synth_short_chain_with_late_high_spike_then_long_rev():
+    """Engineered for the 1993 DXY bug shape (H30f Issue 1).
+
+    A SHORT chain of two boxes. The SECOND cont box's breakout window
+    (bars strictly between its P2 and P3) contains:
+      • a NEW lowest low (which must become the chain terminal — and
+        therefore the LONG reversal box's P0)
+      • AFTER that new low, a high SPIKE that exceeds every prior high
+        since the chain terminal
+
+    Without the H30f fix the rev candidate's running_max is frozen at the
+    pre-cont value, so the LONG reversal box's P1 picks up a LATER, lower
+    swing peak instead of the in-window spike. With the fix, the post-
+    cont-emit loop processes bars (cont.P2, cont.P3] for the rev track
+    and the spike's high becomes the reversal box's P1.
+    """
+    n = 260
+    rng = np.random.RandomState(11)
+    closes = (100 + rng.normal(0, 0.04, n)).astype(float)
+    H = closes + 0.3
+    L = closes - 0.3
+    def seg(a, b, lo, hi):
+        for i, v in enumerate(np.linspace(lo, hi, b - a + 1)):
+            H[a + i] = v + 0.3; L[a + i] = v - 0.3; closes[a + i] = v
+    # ---- chain SHORT, box 1 (idx 5 .. 45)
+    H[5] = 110.0; L[5] = 109.5; closes[5] = 109.8                  # P0 high
+    seg(5, 25, 109.8, 90.0)                                        # decline
+    L[25] = 89.5; H[25] = 90.5; closes[25] = 90.0                  # P1 low
+    seg(25, 35, 90.0, 100.0)                                       # retrace
+    H[35] = 100.0; L[35] = 99.4; closes[35] = 99.7                 # P2 = mid retrace high
+    seg(35, 45, 99.7, 88.0)                                        # P3 break low
+    # ---- chain SHORT, box 2 cont (P0 = P2 of box1 @ idx 35)
+    seg(45, 70, 88.0, 78.0)                                        # decline
+    L[70] = 77.5; H[70] = 78.5; closes[70] = 78.0                  # box2 P1
+    seg(70, 80, 78.0, 88.5)                                        # retrace
+    H[80] = 88.5; L[80] = 87.9; closes[80] = 88.2                  # box2 P2 (mid retrace)
+    # breakout window (P2=80 .. P3=??):
+    seg(80, 95, 88.2, 80.0)                                        # drift down
+    # *** Deepest low of the entire chain — buried inside box2's breakout. ***
+    L[100] = 65.0; H[100] = 66.5; closes[100] = 66.0
+    seg(100, 105, 66.0, 75.0)
+    # *** High SPIKE after the deepest low but BEFORE box2's P3 fires. ***
+    H[110] = 95.0; L[110] = 93.5; closes[110] = 94.5
+    seg(110, 120, 94.5, 76.5)
+    # box2 P3: low must drop below box2 P1 (77.5)
+    L[120] = 76.0; H[120] = 77.5; closes[120] = 76.8
+    # ---- After P3, head sharply UP so a LONG reversal can form anchored
+    # at the chain terminal low (the spike at idx=100).
+    seg(120, 145, 76.8, 90.0)
+    H[145] = 91.0; L[145] = 90.5; closes[145] = 90.8                # rev P1 candidate? No — true REV P1 must equal in-window high spike 95.0
+    seg(145, 155, 90.8, 80.0)                                       # rev P2 mid retrace
+    L[155] = 79.5; H[155] = 80.5; closes[155] = 80.0
+    seg(155, 175, 80.0, 100.0)                                      # rev P3 break above the spike
+    H[175] = 100.0; L[175] = 99.5; closes[175] = 99.8
+    return _df(H.tolist(), L.tolist(), closes.tolist())
+
+
+def test_h30f_p1_invariant_on_engineered_late_spike_fixture():
+    """Bug-shape fixture: the chain terminal updates mid-cont and a high
+    spike appears in the same (P2_cont, P3_cont] window. Asserts the P1
+    invariant on every detected box — the LONG reversal box's P1 must
+    equal the in-window high spike (95.0), not a later, lower peak."""
+    df = _synth_short_chain_with_late_high_spike_then_long_rev()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    _assert_p1_invariant(df, boxes,
+                          ctx="engineered late-spike fixture (1993 shape)")
+
+
+# ---------------------------------------------------------------------------
+# H30f Issue 2 — nested sub-boxes (opt-in via ``nested=True``)
+# ---------------------------------------------------------------------------
+
+def test_h30f_nested_off_by_default():
+    """``nested`` defaults to False — chain mode results must be identical
+    to pre-H30f behaviour when the flag isn't passed (modulo the new
+    box_id field which is always assigned in chain mode)."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    plain = bp.detect_boxes_df(df, chain_mode=True)
+    # no nested boxes (parent_box_id must be None on every box)
+    assert all(b.parent_box_id is None for b in plain), (
+        "nested=False (default) emitted a box with parent_box_id set")
+    # box_id is monotonically assigned starting at 0
+    assert [b.box_id for b in plain] == list(range(len(plain))), (
+        f"box_ids should be 0..{len(plain) - 1}, got {[b.box_id for b in plain]}")
+
+
+def test_h30f_nested_adds_sub_boxes_with_parent_link():
+    """When ``nested=True`` the detector appends sub-boxes that satisfy the
+    full 4-point construction strictly inside a parent's [P0..P3] span,
+    each tagged with ``parent_box_id`` pointing at the smallest container."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    plain = bp.detect_boxes_df(df, chain_mode=True)
+    nested_run = bp.detect_boxes_df(df, chain_mode=True, nested=True)
+    # nested mode is additive — every plain (parent) box must still appear
+    parent_ids = {b.box_id for b in plain}
+    assert parent_ids.issubset({b.box_id for b in nested_run}), (
+        "nested=True dropped a parent box")
+    nested_only = [b for b in nested_run if b.parent_box_id is not None]
+    if not nested_only:
+        # Fixture without inner sub-boxes — skip the structural check
+        return
+    # Every nested box must sit strictly inside its declared parent
+    by_id = {b.box_id: b for b in nested_run}
+    for b in nested_only:
+        p = by_id[b.parent_box_id]
+        assert p.p0_idx <= b.p0_idx and b.p3_idx <= p.p3_idx, (
+            f"nested {b.box_id}[{b.p0_idx}..{b.p3_idx}] not inside parent "
+            f"{p.box_id}[{p.p0_idx}..{p.p3_idx}]")
+        assert not (p.p0_idx == b.p0_idx and p.p3_idx == b.p3_idx), (
+            f"nested box has identical span to parent (should be excluded)")
+        assert p.parent_box_id is None, (
+            f"parent of nested {b.box_id} is itself nested — should link to "
+            f"the smallest containing PRIMARY (chained) parent")

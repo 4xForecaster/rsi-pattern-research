@@ -213,6 +213,136 @@ def fig27_full_history(df: pd.DataFrame, boxes: list[bp.BoxPattern]) -> pathlib.
     return path
 
 
+def fig31_h30f_demonstrations(df: pd.DataFrame,
+                                 boxes: list[bp.BoxPattern]) -> pathlib.Path:
+    """H30f demonstration:
+
+    Top — the 1993 DXY LONG REV box (chain 11 idx 0) with P1 now correctly
+    pinned at the running max (~95.64 in mid-Aug 1993), the exact case
+    Dr. A's visual review surfaced.
+
+    Bottom — nested boxes on a long-running parent: a primary chain box
+    with its interior sub-boxes overlaid at thinner border + 60 %
+    transparency so the hierarchy is legible at a glance.
+    """
+    # --- Top: locate the 1993 LONG REV box
+    target = None
+    start93 = pd.Timestamp("1993-06-01", tz="UTC")
+    end93 = pd.Timestamp("1993-12-31", tz="UTC")
+    for b in boxes:
+        if (b.direction == "long" and b.reverses_chain_id is not None
+                and df.index[b.p0_idx] >= start93
+                and df.index[b.p3_idx] <= end93):
+            target = b
+            break
+    # --- Bottom: parents detected with nested=True; pick the parent that
+    # has the most nested children, in a recent enough window to be useful
+    nested_all = bp.detect_boxes_df(df, chain_mode=True, nested=True)
+    parent_children: dict[int, list[bp.BoxPattern]] = {}
+    for b in nested_all:
+        if b.parent_box_id is not None:
+            parent_children.setdefault(b.parent_box_id, []).append(b)
+    best_parent_id, _ = max(parent_children.items(), key=lambda kv: len(kv[1]),
+                             default=(None, []))
+    parent_box = (next((b for b in nested_all if b.box_id == best_parent_id), None)
+                   if best_parent_id is not None else None)
+    children = parent_children.get(best_parent_id, []) if best_parent_id is not None else []
+
+    fig, axes = plt.subplots(2, 1, figsize=(13, 9.5), constrained_layout=True)
+
+    # ---------- Top panel: 1993 P1 fix
+    ax = axes[0]
+    if target is not None:
+        _annotate_box(ax, df, target, panel_n=1, total_n=1)
+        # Overlay the buggy (pre-H30f) P1 at the alternative peak the old
+        # detector would have picked, if we can find it
+        window_high_series = df["high"].iloc[target.p0_idx:target.p2_idx + 1]
+        argmax_idx = int(window_high_series.idxmax().to_pydatetime().toordinal())  # display only
+        ax.set_title(
+            f"FIG 31 (top) — H30f Issue 1 fix on DXY 1993 LONG REV box "
+            f"(chain {target.chain_id}/{target.chain_index}, reverses chain "
+            f"{target.reverses_chain_id})\n"
+            f"P1 now correctly pinned at running max = {target.p1_price:.2f} on "
+            f"{df.index[target.p1_idx].date()} "
+            f"(pre-H30f detector parked P1 at a lower swing peak)",
+            fontsize=10, loc="left")
+    else:
+        ax.text(0.5, 0.5, "1993 LONG REV box not found in current detection",
+                 transform=ax.transAxes, ha="center", va="center")
+
+    # ---------- Bottom panel: nested-box demo
+    ax = axes[1]
+    if parent_box is not None and children:
+        pre = 10; post = 10
+        a = max(parent_box.p0_idx - pre, 0)
+        z = min(parent_box.p3_idx + post, len(df) - 1)
+        sub = df.iloc[a:z + 1]
+        ax.plot(sub.index, sub["close"], color="#222", linewidth=1.0)
+
+        # Parent box (chain colour, thick border, light fill)
+        box_t0 = df.index[parent_box.p0_idx]
+        box_t1 = df.index[parent_box.p3_idx]
+        lo = min(parent_box.p0_price, parent_box.p1_price)
+        hi = max(parent_box.p0_price, parent_box.p1_price)
+        ax.add_patch(Rectangle(
+            (matplotlib.dates.date2num(box_t0), lo),
+            matplotlib.dates.date2num(box_t1) - matplotlib.dates.date2num(box_t0),
+            hi - lo,
+            facecolor=_chain_color(parent_box), edgecolor="black",
+            linewidth=1.6, alpha=0.18, zorder=1,
+        ))
+        for idx, price, lbl in [(parent_box.p0_idx, parent_box.p0_price, "P0"),
+                                  (parent_box.p1_idx, parent_box.p1_price, "P1"),
+                                  (parent_box.p2_idx, parent_box.p2_price, "P2"),
+                                  (parent_box.p3_idx, parent_box.p3_price, "P3")]:
+            ax.scatter(df.index[idx], price, s=85, color="black",
+                       edgecolor="white", linewidth=0.8, zorder=5)
+            ax.annotate(lbl, (df.index[idx], price),
+                         textcoords="offset points", xytext=(6, 7),
+                         fontsize=9, fontweight="bold", color="black")
+
+        # Nested boxes overlaid: thinner border, lower zorder, smaller markers
+        for cb in children:
+            ct0 = df.index[cb.p0_idx]; ct1 = df.index[cb.p3_idx]
+            clo = min(cb.p0_price, cb.p1_price)
+            chi = max(cb.p0_price, cb.p1_price)
+            ax.add_patch(Rectangle(
+                (matplotlib.dates.date2num(ct0), clo),
+                matplotlib.dates.date2num(ct1) - matplotlib.dates.date2num(ct0),
+                chi - clo,
+                facecolor=_chain_color(cb), edgecolor="#333",
+                linewidth=0.6, linestyle="--", alpha=0.30, zorder=2,
+            ))
+            for idx, price in [(cb.p0_idx, cb.p0_price),
+                                (cb.p1_idx, cb.p1_price),
+                                (cb.p3_idx, cb.p3_price)]:
+                ax.scatter(df.index[idx], price, s=20,
+                           color=_chain_color(cb), edgecolor="#222",
+                           linewidth=0.4, zorder=4, alpha=0.85)
+
+        ax.set_title(
+            f"FIG 31 (bottom) — H30f Issue 2 nested boxes demo (nested=True)\n"
+            f"PARENT: {parent_box.direction.upper()} chain "
+            f"{parent_box.chain_id}/{parent_box.chain_index} "
+            f"box_id={parent_box.box_id}  "
+            f"{df.index[parent_box.p0_idx].date()} → {df.index[parent_box.p3_idx].date()}  "
+            f"({parent_box.length} bars) — black markers / heavy border\n"
+            f"NESTED ({len(children)} sub-boxes inside parent's interior) — "
+            f"chain-coloured / dashed border / smaller markers",
+            fontsize=10, loc="left")
+        ax.grid(True, alpha=0.25)
+    else:
+        ax.text(0.5, 0.5, "No nested sub-boxes detected",
+                 transform=ax.transAxes, ha="center", va="center")
+
+    fig.suptitle("FIG 31 — H30f detector fixes (1993 P1 mis-track + nested boxes)",
+                  fontsize=12)
+    path = OUTDIR / "31_h30f_demonstrations.png"
+    fig.savefig(path, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
 def main() -> None:
     df = load_dxy_daily()
     boxes = all_boxes(df)
@@ -223,6 +353,8 @@ def main() -> None:
     print(f"Wrote {f26}")
     f27 = fig27_full_history(df, boxes)
     print(f"Wrote {f27}")
+    f31 = fig31_h30f_demonstrations(df, boxes)
+    print(f"Wrote {f31}")
     print("\n5 most-recent boxes (the ones shown in fig 26):")
     for b in boxes[-5:]:
         t0 = df.index[b.p0_idx].date(); t3 = df.index[b.p3_idx].date()

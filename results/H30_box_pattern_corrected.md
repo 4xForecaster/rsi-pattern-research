@@ -766,3 +766,194 @@ H1, H4 and Daily all yield clean examples in every category.
 
 All three PNGs are also copied to `~/Documents/4xForecaster/` so Dr.
 A can open them directly.
+
+## H30f (2026-06-20) — sixth detector iteration: P1 mis-track + nested boxes
+
+Dr. A's sixth catch from the regenerated H30e figures:
+
+> **Issue 1** — *"P1 STILL at wrong level in some cases."* The 1993-06 →
+> 1993-12 DXY LONG REV box (chain 11, reverses the prior SHORT chain)
+> had P1 plotted at ~91.97 while the chart clearly showed higher peaks
+> in July/August 1993. Real max in the [P0..P2] window: **95.64 at
+> idx 916** (1993-08-19). Same class of bug as H30b's "P1 must be the
+> dominant swing high" but surviving through H30b/c/d/e.
+
+> **Issue 2** — *Nested boxes.* The detector should ALSO find smaller
+> sub-boxes that satisfy the full 4-point construction *inside* a
+> larger parent's [P0..P3] price action. Gated behind a `nested=True`
+> flag so default chain-mode behaviour is unchanged.
+
+### Diagnosis — Issue 1 root cause
+
+The chain detector tracks two parallel state machines inside
+`_walk_chain_continuation`:
+1. **Cont track** — running extreme in the chain's direction (the next
+   continuation box's eventual P1).
+2. **Rev track** — running extreme in the OPPOSITE direction, anchored at
+   the chain's terminal extreme (the eventual reversal box's P1, if
+   the chain ever reverses).
+
+When a cont box completes inside the walker, the function emits the box
+at bar `j = P2_cont` and returns. The caller (`_detect_box_chained`)
+then extends the chain terminal across `(P1_cont, P3_cont]` and calls
+the walker again starting from `P3_cont + 1`.
+
+Two compounding gaps in pre-H30f code:
+
+  **(a)** **rev_state was rebuilt from scratch on every walker call** —
+  meaning the rev candidate's running extreme `rev_re_price` was reset
+  when cont emitted, losing the highest high (or lowest low) accumulated
+  earlier in the chain.
+
+  **(b)** **bars in `(P2_cont, P3_cont]` were never processed for the rev
+  track** — the cont track's gap pre-scan from H30e covered `(P2_prev,
+  P3_prev]` for the *next cont's* P0 only, not for the *rev candidate's*
+  running extreme. In Dr. A's 1993 case the cont emitted at `j = 889`
+  (SHORT-direction cont), and bars 890..932 — including bar 916 with
+  high = 95.64 — were never seen by the rev tracker. The eventual LONG
+  REV box's P1 picked up a later, lower swing peak (91.97).
+
+### Fix — Issue 1
+
+Three edits, all in `src/rsi_pattern/box_pattern.py`:
+
+1. Threaded `rev_state` dict (`p0_idx`, `p0_price`, `re_idx`, `re_price`,
+   `re_updated`) into `_walk_chain_continuation`'s signature; persisted
+   across cont calls in `_detect_box_chained`; reset to `None` only on
+   reversal.
+2. Updated the cont-gap pre-scan (lines ~605–625) to also track the
+   chain-direction running extreme `cont_re`, not just `cont_p0` (the
+   H30e fix only covered `cont_p0`).
+3. **New post-cont-emit loop** (lines ~735–760) — after `_walk_chain_continuation`
+   commits a cont box at `j = P2_cont`, scan bars in `range(j + 1,
+   box.p3_idx + 1)` for the rev track: update `term_price`/`term_idx`
+   (potential new chain terminal), reset `rev_p0` when the terminal
+   updates, and update `rev_re_price` for bars strictly after the new
+   `rev_p0_idx`.
+
+### Diagnostic — Issue 1 verified
+
+Pre-fix DXY daily run had 14/135 LONG and 4/130 SHORT chain boxes
+violating the invariant `p1_price == max(high) (or min(low)) over
+[p0_idx..p2_idx]`. Worst violator was chain 11 idx 0 REV at delta 3.67
+(91.97 vs 95.64). After the fix:
+
+```
+chain_mode (no nested): 266 boxes
+  LONG violators: 0 / 129
+  SHORT violators: 0 / 137
+  chain 11/0 REV: P1 idx=916 @ 95.64 — matches running max exactly
+```
+
+### Fix — Issue 2 (nested boxes)
+
+New helper `_add_nested_to_chained` in `src/rsi_pattern/box_pattern.py`
+runs after chain detection when `nested=True`. It re-runs the standalone
+(non-chained) corrected detector over the same series in BOTH
+directions, then for each candidate sub-box finds the smallest chain
+parent whose [P0..P3] strictly contains it. Each nested box gets
+`parent_box_id` set to that container's `box_id`; primaries keep
+`parent_box_id = None`. New `BoxPattern` fields: `box_id`
+(monotonically assigned to every chain box) and `parent_box_id`
+(Optional[int]).
+
+DXY daily smoke: `chain_mode=True` returns 266 parents; with
+`nested=True` adds 246 sub-boxes linked to their smallest containers.
+Cost is sub-second (two full standalone passes + O(parents · candidates)
+containment matching).
+
+### Backtest — H30f re-run
+
+Standalone (H30b lens) unchanged — the H30f fixes are chain-mode only.
+The chain-conditional Variant A results SHIFT materially because the
+rev_state persistence changes where reversal boxes anchor their P1, and
+through that downstream metrics:
+
+| Sym | H30e N≥1 OOS | **H30f N≥1 OOS** | Δ | H30e N≥2 OOS | **H30f N≥2 OOS** |
+|---|---:|---:|---:|---:|---:|
+| DXY    | −0.21 / 33 | +0.01 / 30 NO-GO | +0.22 | −0.59 / 18 | −0.23 / 16 NO-GO |
+| EURUSD | +0.19 / 31 | **+2.05 / 18 SWEEP** | **+1.86** | −0.72 / 16 | **+1.19 / 10 SWEEP** |
+| GBPUSD | +0.90 / 22 | −0.08 / 20 NO-GO | −0.98 | **+1.90 / 12 SWEEP** | +0.39 / 10 NO-GO |
+| USDJPY | +0.78 / 19 | +0.14 / 13 NO-GO | −0.64 | +0.23 / 8 | −0.22 / 3 NO-GO |
+| USDCAD | −0.66 / 24 | +0.21 / 20 NO-GO | +0.87 | −1.06 / 13 | +0.15 / 9 NO-GO |
+| AUDUSD | +0.23 / 27 | +0.23 / 25 NO-GO | 0.00 | +0.81 / 15 | +0.55 / 15 NO-GO |
+| NZDUSD | −0.32 / 20 | −0.80 / 18 NO-GO | −0.48 | −0.31 / 15 | −0.41 / 11 NO-GO |
+
+**Cell verdict matrix at H30f:** 0 GO, 2 SWEEP — **EURUSD chain N≥1
+(+2.05 / 18) and N≥2 (+1.19 / 10)**. GBPUSD's prior chain N≥2 SWEEP
+(+1.90 / 12 at H30e) collapses to NO-GO. The 2-SWEEP count is stable
+across H30e → H30f but the *identity* of the SWEEP cells migrates from
+GBPUSD to EURUSD chain-conditional. Standalone GBPUSD A SWEEP at +1.29
+is unchanged.
+
+This is not a "ship a new GO" change — every cell remains below the GO
+floor — but it is an honest, structurally-driven shift in *which pair*
+shows the strongest persistent positive Sortino under chain
+conditioning. The H30e write-up that pointed at GBPUSD as "the only
+signal that survives all five detector corrections" is now wrong on
+identity; the equivalent statement at H30f is **"EURUSD's chain-
+conditional N≥1/N≥2 cells are the only signal that survives all six
+detector corrections"** — still SWEEP, still below GO, but a different
+pair.
+
+### The bug-catch tally extends
+
+| Rev | Bug | Eliminated artifact |
+|---|---|---|
+| H30b | `find_peaks` P1 vs running-max | 2008-style "wrong dominant peak" boxes |
+| H30d | P1 collapsed to P0 (1-bar swing) | 132 micro-boxes |
+| H30d | P3 marker plotted at wrong y | 397 mis-rendered P3 levels |
+| H30e | P0 not at deepest low | 103 wrong-P0 boxes |
+| **H30f** | **rev_state reset across cont calls + (P2,P3] not scanned for rev track** | **18 wrong-P1 REV boxes (14 LONG + 4 SHORT)** |
+
+### Visuals re-rendered with H30f detector
+
+All five prior PNGs regenerated and re-copied to
+`~/Documents/4xForecaster/`. One new figure added:
+
+- `figures/31_h30f_demonstrations.png` — **two-panel demonstration**.
+  Top panel shows the 1993 LONG REV box with P1 now correctly pinned at
+  95.64 (1993-08-19), the case Dr. A's visual review surfaced. Bottom
+  panel shows nested boxes on a long-running parent (chain colour /
+  dashed border / smaller markers) overlaid against the primary box
+  (black markers / heavy border) — the `nested=True` flag visualised.
+
+### Regression coverage
+
+5 new tests in `tests/test_box_pattern.py` (27 total, all passing):
+
+- `test_h30f_p1_equals_running_extremum_on_long_chain_then_short_rev`
+- `test_h30f_p1_equals_running_extremum_on_short_chain_then_long_rev`
+- `test_h30f_p1_invariant_on_engineered_late_spike_fixture` — uses a
+  synthetic SHORT chain with the exact bug shape: a deepest low buried
+  in cont's `(P2, P3]` window followed by a high spike in the same
+  window, then a LONG reversal. Verifies the LONG REV's P1 equals the
+  in-window spike, not a later lower peak.
+- `test_h30f_nested_off_by_default` — `parent_box_id` is None for
+  every box when `nested=False`; `box_id` monotonically 0..N-1.
+- `test_h30f_nested_adds_sub_boxes_with_parent_link` — `nested=True`
+  is additive (all parents still present); nested boxes are strictly
+  contained in their declared parent and the parent is itself a
+  primary (no two-level nesting).
+
+### Honest verdict at H30f
+
+After six rounds of bug catches and corrections triggered by Dr. A's
+visual review:
+
+- The chain-mode detector is now structurally clean across both
+  state machines (cont and rev). The P1 invariant is verifiable as a
+  post-hoc check on every box: `p1_price == extremum(high or low)
+  over [p0_idx..p2_idx]`. 0/266 violators on DXY daily.
+- Nested-box detection is available as an opt-in flag for downstream
+  experiments (e.g. multi-scale conditioning, sub-pattern frequency
+  studies) without changing default chain-mode output.
+- The box-pattern single-box and chain-conditional **trade strategies
+  remain decisively NO-GO**. 0 GO, 2 SWEEP (EURUSD chain N≥1 and N≥2)
+  — the SWEEPs migrated from GBPUSD at H30e to EURUSD at H30f, which
+  is itself diagnostic: even at SWEEP level, *which pair shows the
+  signal depends on the detector's internal state-machine fidelity*.
+  That's a high bar for any future SWEEP→GO claim from chain-mode.
+- **H31 regime-classifier direction unchanged.** The box detector's
+  structural strength is in providing clean chain/translation signals
+  to aggregate; per-box trade triggers are not the right product.
