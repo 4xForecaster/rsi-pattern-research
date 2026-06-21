@@ -1057,6 +1057,127 @@ def detect_boxes_df(
 
 
 # ---------------------------------------------------------------------------
+# H31 — Translation-aggregation regime label (drop-in for FLD bias)
+#
+# Aggregates the *translation verdict* (b.asymmetry) of the last N completed
+# boxes — the per-box "bullish/bearish/neutral" tag is what carries the
+# longer-component-pressure signal Hurst's translation law describes; the
+# box's own LONG/SHORT direction modifies the trade, not the regime.
+# ---------------------------------------------------------------------------
+
+RegimeLabel = Literal["bullish_regime", "bearish_regime",
+                       "neutral_regime", "unknown"]
+RegimeThreshold = Literal["strict", "relaxed"]
+
+
+def _completed_boxes_asof(boxes: list[BoxPattern], asof_idx: int
+                            ) -> list[BoxPattern]:
+    """Return chronologically-ordered completed boxes (P3 confirmed AT or
+    BEFORE ``asof_idx``). Sorted by p3_idx ascending so the *last N* slice
+    is the N most-recent completed boxes."""
+    out = [b for b in boxes if b.p3_idx <= asof_idx]
+    out.sort(key=lambda b: b.p3_idx)
+    return out
+
+
+def _apply_regime_threshold(asymmetries: list[str],
+                              threshold: RegimeThreshold) -> RegimeLabel:
+    """Translate a list of N translation verdicts into a regime label.
+
+    strict   — unanimous: N bullish → bullish, N bearish → bearish, else neutral
+    relaxed  — (N-1)+ majority: ≥(N-1) bullish → bullish, ≥(N-1) bearish →
+                bearish, else neutral
+
+    Neutral verdicts ("neutral") are counted toward neither side, matching
+    the FLD-bias baseline's behaviour where mixed cycles produce neutral.
+    """
+    n = len(asymmetries)
+    if n == 0:
+        return "unknown"
+    bull = sum(1 for a in asymmetries if a == "bullish")
+    bear = sum(1 for a in asymmetries if a == "bearish")
+    if threshold == "strict":
+        if bull == n:
+            return "bullish_regime"
+        if bear == n:
+            return "bearish_regime"
+        return "neutral_regime"
+    if threshold == "relaxed":
+        floor = n - 1
+        if bull >= floor and bull > bear:
+            return "bullish_regime"
+        if bear >= floor and bear > bull:
+            return "bearish_regime"
+        return "neutral_regime"
+    raise ValueError(f"unknown threshold: {threshold!r}")
+
+
+def box_regime_label(boxes: list[BoxPattern], asof_idx: int, *,
+                       window_n: int = 5,
+                       threshold: RegimeThreshold = "strict") -> RegimeLabel:
+    """H31 regime label at ``asof_idx`` from the last ``window_n`` completed
+    boxes. Returns 'unknown' when fewer than ``window_n`` boxes have a
+    confirmed P3 at or before ``asof_idx``.
+
+    Pure function — no detection inside. Pass a pre-detected ``boxes`` list
+    (typically ``detect_boxes_df(df, chain_mode=True)``). For batch scoring
+    use :func:`box_regime_series` which loops this with O(N) sort+slice.
+    """
+    completed = _completed_boxes_asof(boxes, asof_idx)
+    if len(completed) < window_n:
+        return "unknown"
+    window = completed[-window_n:]
+    return _apply_regime_threshold([b.asymmetry for b in window], threshold)
+
+
+def box_regime_series(df: pd.DataFrame, *,
+                       window_n: int = 5,
+                       threshold: RegimeThreshold = "strict",
+                       chain_mode: bool = True,
+                       boxes: Optional[list[BoxPattern]] = None,
+                       prominence_frac: float = PROMINENCE_FRAC,
+                       distance: int = DISTANCE_BARS,
+                       t_endpoint: TEndpoint = "p2",
+                       max_length: Optional[int] = MAX_LENGTH_BARS,
+                       ) -> pd.Series:
+    """Per-bar regime label across the entire ``df`` index. Detects boxes
+    once (or accepts a pre-detected list) and then steps through every bar
+    setting the label to whatever the last ``window_n`` completed boxes
+    voted at that bar's index.
+
+    The series can be used as a drop-in replacement for
+    ``fld.fld_bias(...)['bias_label']`` in the H23/H24 backtest harness;
+    label values map to Scheme D the same way:
+        bullish_regime ↔ FLD 'bullish'  (bull_m multiplier)
+        bearish_regime ↔ FLD 'bearish'  (bear_m multiplier)
+        neutral_regime ↔ FLD 'neutral'  (neut_m multiplier)
+        unknown        ↔ FLD 'unknown'  (treated as neutral by H23)
+    """
+    if boxes is None:
+        boxes = detect_boxes_df(df, chain_mode=chain_mode,
+                                 prominence_frac=prominence_frac,
+                                 distance=distance,
+                                 t_endpoint=t_endpoint,
+                                 max_length=max_length)
+    # Sort once; use a moving pointer to avoid O(n²) scanning.
+    boxes_sorted = sorted(boxes, key=lambda b: b.p3_idx)
+    asyms_so_far: list[str] = []
+    p3_idxs = [b.p3_idx for b in boxes_sorted]
+    out: list[RegimeLabel] = []
+    cursor = 0
+    for i in range(len(df)):
+        while cursor < len(p3_idxs) and p3_idxs[cursor] <= i:
+            asyms_so_far.append(boxes_sorted[cursor].asymmetry)
+            cursor += 1
+        if len(asyms_so_far) < window_n:
+            out.append("unknown")
+        else:
+            window = asyms_so_far[-window_n:]
+            out.append(_apply_regime_threshold(window, threshold))
+    return pd.Series(out, index=df.index, name=f"regime_{threshold}_{window_n}")
+
+
+# ---------------------------------------------------------------------------
 # Box → FibTrade (uses position_sizing.simulate_fib_trade)
 # ---------------------------------------------------------------------------
 

@@ -196,3 +196,53 @@ boxes), re-run the H23 7-pair OOS backtest, and require the
 box-regime variant to clear GO on ≥3 of 7 majors — i.e., to *at
 minimum match* the FLD-bias baseline. Pass that bar and the
 detector earns a place in production; miss it and we kill the line.
+
+## H31 result (2026-06-21) — PASS_WITH_MIGRATION
+
+Implementation landed: `box_pattern.box_regime_label` and
+`box_pattern.box_regime_series` (asymmetry-aggregation helpers), plus
+`scripts/h31_box_regime_classifier.py` (the 7-pair drop-in backtest)
+and the hurst-agent integration switch (`daily_layer.regime_source: fld
+| box_translation` in `config/rsi_m_p1.yaml`, default `fld`, with the
+M-P1 strategy module branching on the flag).
+
+**Pre-registered floor cleared at the strict (5/5) threshold.** Box-
+regime strict yields 3 GOs (EURUSD, USDCAD, **USDJPY**), satisfying
+the literal ≥3-of-7 PASS criterion. Box-regime ALSO adds **USDJPY** —
+a pair FLD-bias couldn't reach — which by the brief's literal
+"STRONG_PASS if box-regime ADDS pairs" rule technically qualifies as
+STRONG. But the substitution simultaneously *loses* GBPUSD and NZDUSD
+(both FLD GOs), so the net GO count drops 4 → 3. The honest verdict
+is **PASS_WITH_MIGRATION**: the floor holds, but the regime-source
+swap reshuffles *which* pairs qualify rather than universally
+strengthening the GO list.
+
+Box-regime relaxed (≥4/5) fails: 1 GO only (USDJPY). The relaxed
+threshold over-fires the bullish_regime label and the resulting
+contrarian SchemeD 0× drops too many otherwise-positive trades.
+
+**H24 robustness — none reach SOLID_GO** under any variant. EURUSD
+strict gets THIN_GO (2/4), USDJPY relaxed gets THIN_GO (2/4), the
+rest are DOWNGRADE_SWEEP. By the same H24 bar that filters FLD's GO
+list (where only GBPUSD survives as THIN_GO), the box-regime
+substitution produces a *different* THIN_GO survivor — EURUSD under
+strict — but does not promote any pair past the THIN bar. Per-pair
+H24-survivor count is tied at 1 across FLD vs strict vs relaxed.
+
+**Production status.** Per the brief: ≥3 GO triggers the
+`regime_source` switch in the M-P1 strategy module. Implemented and
+shipped to `hurst-agent` config + strategy + tests. Default is
+`regime_source: fld` so DXY's live cron is unchanged. The flag exists
+so a per-symbol decision can later promote (e.g.) USDJPY under
+`regime_source: box_translation` with explicit operator approval —
+but the H24 bar above forbids that promotion today.
+
+**The H31 recommendation in this doc stands, qualified.** The
+translation-aggregation regime IS a valid Hurst-canonical cross-scale
+signal that earns a place in the M-P1 stack at the regime-source
+seam. It is NOT, on this evidence, a wholesale upgrade over FLD-bias;
+it is a *different* regime-source whose pair selectivity differs.
+The integration switch is the right vehicle: per-symbol regime-source
+choice, gated on per-symbol H24 SOLID_GO + operator approval.
+
+Detail: `results/H31_box_regime_classifier.md`.

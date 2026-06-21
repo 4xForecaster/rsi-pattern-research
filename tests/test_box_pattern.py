@@ -895,6 +895,102 @@ def test_h30f_nested_off_by_default():
         f"box_ids should be 0..{len(plain) - 1}, got {[b.box_id for b in plain]}")
 
 
+def test_h31_box_regime_label_unknown_when_fewer_than_n_completed_boxes():
+    """``box_regime_label`` must return 'unknown' if fewer than ``window_n``
+    boxes have a confirmed P3 at or before ``asof_idx``."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    # at asof_idx 0 no boxes can possibly be completed
+    assert bp.box_regime_label(boxes, 0, window_n=5) == "unknown"
+    # mid-series, but only 2 completed → still unknown
+    if len(boxes) >= 5:
+        asof_only_two = sorted(boxes, key=lambda b: b.p3_idx)[1].p3_idx
+        assert bp.box_regime_label(boxes, asof_only_two, window_n=5) == "unknown"
+
+
+def _fake_boxes(asyms: list[str]) -> list[bp.BoxPattern]:
+    """Construct a minimal list of BoxPattern objects, P3 = i, asymmetry as
+    given. Only the fields box_regime_label reads (p3_idx, asymmetry) need
+    to be valid; the rest are filler."""
+    out = []
+    for i, a in enumerate(asyms):
+        out.append(bp.BoxPattern(
+            direction="long",
+            p0_idx=i, p0_price=0.0, p1_idx=i, p1_price=0.0,
+            p2_idx=i, p2_price=0.0, p3_idx=i, p3_price=0.0,
+            height=0.0, length=0, t_mid=float(i),
+            asymmetry=a, trade_aligned=False,
+        ))
+    return out
+
+
+def test_h31_strict_threshold_5of5_unanimous():
+    """strict = unanimous in the 5-bar window."""
+    asof = 100
+    bull = _fake_boxes(["bullish"] * 5)
+    bear = _fake_boxes(["bearish"] * 5)
+    mixed4 = _fake_boxes(["bullish"] * 4 + ["bearish"])
+    assert bp.box_regime_label(bull, asof, window_n=5, threshold="strict") == "bullish_regime"
+    assert bp.box_regime_label(bear, asof, window_n=5, threshold="strict") == "bearish_regime"
+    assert bp.box_regime_label(mixed4, asof, window_n=5, threshold="strict") == "neutral_regime"
+
+
+def test_h31_relaxed_threshold_4of5_majority():
+    """relaxed = ≥(N-1) of N bullish/bearish AND a side majority."""
+    asof = 100
+    asyms_4bull = ["bullish"] * 4 + ["neutral"]
+    asyms_4bear = ["bearish"] * 4 + ["neutral"]
+    asyms_3bull_2bear = ["bullish"] * 3 + ["bearish"] * 2
+    asyms_2bull_3bear = ["bullish"] * 2 + ["bearish"] * 3
+    a = _fake_boxes(asyms_4bull)
+    b = _fake_boxes(asyms_4bear)
+    c = _fake_boxes(asyms_3bull_2bear)
+    d = _fake_boxes(asyms_2bull_3bear)
+    assert bp.box_regime_label(a, asof, window_n=5, threshold="relaxed") == "bullish_regime"
+    assert bp.box_regime_label(b, asof, window_n=5, threshold="relaxed") == "bearish_regime"
+    assert bp.box_regime_label(c, asof, window_n=5, threshold="relaxed") == "neutral_regime"
+    assert bp.box_regime_label(d, asof, window_n=5, threshold="relaxed") == "neutral_regime"
+
+
+def test_h31_box_regime_label_uses_only_completed_boxes_asof():
+    """A box whose P3 is AFTER asof_idx must not contribute to the count."""
+    # Build a box with p3_idx=50 but assert asof=49 ignores it.
+    boxes = _fake_boxes(["bullish"] * 5)  # p3_idx will be 0..4
+    # Pad: 5 bullish complete at idx 0..4, asof=4 → all five seen → bullish
+    assert bp.box_regime_label(boxes, 4, window_n=5, threshold="strict") == "bullish_regime"
+    # asof=3 → only 4 visible → unknown
+    assert bp.box_regime_label(boxes, 3, window_n=5, threshold="strict") == "unknown"
+
+
+def test_h31_box_regime_series_is_as_of_safe():
+    """The per-bar series must be causally safe — at index i the label
+    reflects only boxes with p3_idx ≤ i."""
+    df = _synth_three_box_long_chain_then_short_reversal()
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    series = bp.box_regime_series(df, boxes=boxes, window_n=3, threshold="strict")
+    # Before any box's P3 the label must be 'unknown'
+    earliest_p3 = min(b.p3_idx for b in boxes)
+    assert (series.iloc[:earliest_p3] == "unknown").all(), (
+        f"labels before any box's P3 (idx {earliest_p3}) leaked future info")
+
+
+def test_h31_box_regime_series_neutral_when_window_underflows():
+    """If detected box count never reaches ``window_n``, every label after
+    the last box is 'unknown', not 'neutral_regime'."""
+    rng = np.random.RandomState(0)
+    n = 80
+    closes = (100 + rng.normal(0, 0.05, n)).astype(float)
+    highs = closes + 0.3; lows = closes - 0.3
+    df = _df(highs.tolist(), lows.tolist(), closes.tolist())
+    boxes = bp.detect_boxes_df(df, chain_mode=True)
+    series = bp.box_regime_series(df, boxes=boxes,
+                                    window_n=max(len(boxes) + 1, 1),
+                                    threshold="strict")
+    assert (series == "unknown").all(), (
+        f"window_n > #boxes ({len(boxes)}) should keep every label 'unknown'; "
+        f"got {series.value_counts().to_dict()}")
+
+
 def test_h30f_nested_adds_sub_boxes_with_parent_link():
     """When ``nested=True`` the detector appends sub-boxes that satisfy the
     full 4-point construction strictly inside a parent's [P0..P3] span,

@@ -123,6 +123,54 @@ these 3 FX series** — does not preclude separately benchmarked use cases
 (intraday, covariates) which would be their own H-series. Detail:
 results/H28_timesfm_negative.md.
 
+## Box-translation regime classifier (H31, 2026-06-21) — PASS_WITH_MIGRATION (3/7 GO at strict, +USDJPY, −GBPUSD/NZDUSD)
+
+Pre-registered application from `docs/BOX_PATTERN_APPLICATIONS.md` §2.
+Drop-in replace the FLD-bias label feeding Scheme D in the M-P1 LONG
+strategy with a rolling regime label built from the last 5 completed
+boxes' translation verdicts (asymmetry: bullish / bearish / neutral).
+Two thresholds tested side-by-side: **strict** (5/5 unanimous) and
+**relaxed** (≥4/5 majority). Same Scheme D 0/1/3 multipliers, same
+70/30 OOS protocol, same GO/SWEEP/NO-GO floors. No per-pair threshold
+tuning — global strict/relaxed rules across all 7 majors per brief.
+
+| Pair    | FLD baseline       | Box strict (5/5)   | Box relaxed (≥4/5) | H31 H24 |
+|---|---|---|---|---|
+| **EURUSD** | **+4.06** / 12 GO  | **+3.25** / 23 GO  | +2.57 /  7 SWEEP   | strict THIN_GO (2/4) |
+| **GBPUSD** | **+5.57** /  9 GO  | +0.65 / 12 NO-GO   | +0.16 /  6 NO-GO   | strict lost |
+| **NZDUSD** | **+5.34** /  4 GO  | −0.20 / 10 NO-GO   | −0.43 /  7 NO-GO   | strict lost |
+| **USDCAD** | **+3.12** / 15 GO  | **+3.12** / 18 GO  | +1.17 / 13 SWEEP   | strict DOWNGRADE (1/4) |
+| AUDUSD  | +1.85 /  9 SWEEP   | +1.02 / 18 SWEEP   | +0.99 / 14 NO-GO   | — |
+| **USDJPY** | +1.64 / 16 SWEEP   | **+5.03** / 32 GO  | **+5.24** / 26 GO  | strict DOWNGRADE (1/4) · relaxed THIN_GO (2/4) |
+| DXY     | +1.34 / 19 SWEEP   | +1.14 / 32 SWEEP   | +0.91 / 18 NO-GO   | — |
+
+**Pre-registered pass criterion** (verbatim from the brief): PASS if
+the box-regime variant clears GO on ≥3 of 7 majors. **Box-strict
+clears 3 GO and adds USDJPY** — a pair FLD-bias couldn't reach —
+satisfying both the literal floor and the STRONG_PASS "ADDS pairs"
+clause. But strict also *loses* GBPUSD (FLD H24 THIN_GO) and NZDUSD
+(FLD H24 DOWNGRADE) — net GO count drops 4 → 3. Honest call:
+**PASS_WITH_MIGRATION**. The floor holds, the regime-source swap
+reshuffles which pairs qualify rather than universally strengthening
+the list. Box-relaxed FAILS the floor (1 GO).
+
+**H24 robustness** — none reach SOLID_GO under any variant. EURUSD
+strict gets THIN_GO (2/4), USDJPY relaxed THIN_GO (2/4); rest are
+DOWNGRADE_SWEEP. Per-pair H24-survivor count is tied at 1 across FLD
+(GBPUSD), strict (EURUSD), relaxed (USDJPY).
+
+**Production integration shipped, NOT live.** Per the brief's
+"if ≥3 of 7 pairs clear GO, modify the M-P1 strategy module":
+`hurst-agent/config/rsi_m_p1.yaml` gains a `daily_layer.regime_source:
+{fld | box_translation}` flag (default `fld`), and
+`hurst_agent.strategies.rsi_m_p1.compute_daily_regime` branches on
+it. DXY's live cron is untouched (default unchanged). Promotion of
+any specific symbol to `box_translation` requires per-symbol H24
+SOLID_GO + explicit operator approval. New API in
+`rsi_pattern.box_pattern`: `box_regime_label` + `box_regime_series`.
+33/33 rsi-pattern-research tests, 55/55 hurst-agent tests pass.
+Detail: `results/H31_box_regime_classifier.md`.
+
 ## Box detector P1-mis-track fix + nested-box flag (H30f, 2026-06-20) — SWEEPs migrate GBPUSD → EURUSD, still 0 GO
 
 Dr. A's sixth visual catch on the regenerated H30e figures: **(Issue 1)**
